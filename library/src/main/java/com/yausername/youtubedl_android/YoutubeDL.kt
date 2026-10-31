@@ -212,20 +212,39 @@ object YoutubeDL {
     }
 
     private fun ignoreErrors(request: YoutubeDLRequest, out: String): Boolean {
-        return request.hasOption("--dump-json") && !out.isEmpty() && request.hasOption("--ignore-errors")
+        return request.hasOption("--dump-json") && out.isNotEmpty() && request.hasOption("--ignore-errors")
     }
 
-    fun destroyProcessById(id: String): Boolean {
-        val process = idProcessMap[id] ?: return false
-        try {
-             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || process.isAlive) {
-                 destroyChildProcesses(id)
-                 process.destroy()
-             }
-            return true
-        } finally {
-             idProcessMap.remove(id)
+    private fun waitForIdRelease(
+        processId: String,
+        timeout: Long = 2000L,
+        confirmation: Long = 50L
+    ): Boolean {
+        val deadline = System.currentTimeMillis() + timeout
+        while (System.currentTimeMillis() < deadline) {
+            if (!idProcessMap.containsKey(processId)) return true
+            Thread.sleep(confirmation)
         }
+        return !idProcessMap.containsKey(processId)
+    }
+
+    private fun lingeringProcessTermination(processId: String?, process: Process) {
+        val pid = processId?.let { idPidMap[it] }
+        if (pid != null) {
+            destroyChildProcesses(pid)
+            sendSignal(pid, 9)
+        } else {
+            process.destroy()
+        }
+    }
+
+    private fun readPidFile(pidFile: File): Int? {
+        repeat(50) {
+            val pid = if (pidFile.exists()) pidFile.readText().trim().toIntOrNull() else null
+            if (pid != null) return pid
+            Thread.sleep(50)
+        }
+        return null
     }
 
 
@@ -302,7 +321,11 @@ object YoutubeDL {
         callback: ((Float, Long, String) -> Unit)? = null
     ) : YoutubeDLResponse {
         assertInit()
-        if (processId != null && idProcessMap.containsKey(processId)) { throw YoutubeDLException("Process ID already exists") }
+        if (processId != null && idProcessMap.containsKey(processId)) {
+            if (!waitForIdRelease(processId)) {
+                throw YoutubeDLException("Process ID already exists")
+            }
+        }
         // disable caching unless explicitly requested
         if (!request.hasOption("--cache-dir") || request.getOption("--cache-dir") == null) {
             request.addOption("--no-cache-dir")
@@ -349,6 +372,11 @@ object YoutubeDL {
                 aria2cPath!!.absolutePath
             } else {
                 arg
+            }
+        }
+        val pidFile = processId?.let {
+            File(TMPDIR, "ytdlp-$it.pid").apply {
+                FileUtils.deleteQuietly(this)
             }
         }
         val command: MutableList<String?> = ArrayList()
@@ -423,7 +451,7 @@ object YoutubeDL {
                 stdErrProcessor.join()
                 process.waitFor()
             } catch (e: InterruptedException) {
-                process.destroy()
+                lingeringProcessTermination(processId, process)
                 throw e
             }
 
@@ -431,7 +459,8 @@ object YoutubeDL {
             val err = errBuffer.toString()
 
             if (exitCode > 0) {
-                if (processId != null && !idProcessMap.containsKey(processId)) {
+                if (processId != null &&
+                    (cancellingProcessIds.contains(processId) || !idProcessMap.containsKey(processId))) {
                     throw CanceledException()
                 }
 
@@ -446,6 +475,8 @@ object YoutubeDL {
         } finally {
             if (processId != null) {
                 idProcessMap.remove(processId)
+                idPidMap.remove(processId)
+                cancellingProcessIds.remove(processId)
             }
         }
     }
