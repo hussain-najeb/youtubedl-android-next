@@ -8,6 +8,8 @@ import com.yausername.youtubedl_android.YoutubeDL.UpdateStatus
 import com.yausername.youtubedl_android.YoutubeDL.getInstance
 import com.yausername.youtubedl_common.SharedPrefsHelper
 import com.yausername.youtubedl_common.SharedPrefsHelper.update
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.IOException
@@ -19,7 +21,7 @@ internal object YoutubeDLUpdater {
     private const val dlpVersionNameKey = "dlpVersionName"
 
     @Throws(IOException::class, YoutubeDLException::class)
-    internal fun update(
+    internal suspend fun update(
         appContext: Context?,
         youtubeDLChannel: UpdateChannel = UpdateChannel.Stable
     ): UpdateStatus {
@@ -48,13 +50,13 @@ internal object YoutubeDLUpdater {
         return UpdateStatus.DONE
     }
 
-    private fun updateSharedPrefs(appContext: Context, tag: String, name: String) {
+    private suspend fun updateSharedPrefs(appContext: Context, tag: String, name: String) {
         update(appContext, dlpVersionKey, tag)
         update(appContext, dlpVersionNameKey, name)
     }
 
     @Throws(IOException::class)
-    private fun checkForUpdate(appContext: Context, youtubeDLChannel: UpdateChannel): JsonNode? {
+    private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: UpdateChannel): JsonNode? {
         val url = URL(youtubeDLChannel.apiUrl)
         val json = YoutubeDL.objectMapper.readTree(url)
         val newVersion = getTag(json)
@@ -64,16 +66,12 @@ internal object YoutubeDLUpdater {
         } else json
     }
 
-    private fun getTag(json: JsonNode): String {
-        return json["tag_name"].asText()
-    }
+    private suspend fun getTag(json: JsonNode): String = json["tag_name"].asText()
 
-    private fun getName(json: JsonNode): String {
-        return json["name"].asText()
-    }
+    private suspend fun getName(json: JsonNode): String = json["name"].asText()
 
     @Throws(YoutubeDLException::class)
-    private fun getDownloadUrl(json: JsonNode): String {
+    private suspend fun getDownloadUrl(json: JsonNode): String {
         val assets = json["assets"] as ArrayNode
         var downloadUrl = ""
         for (asset in assets) {
@@ -87,12 +85,29 @@ internal object YoutubeDLUpdater {
     }
 
     @Throws(IOException::class)
-    private fun download(appContext: Context, url: String): File {
-        val downloadUrl = URL(url)
-        val file = File.createTempFile(dlpBinaryName, null, appContext.cacheDir)
-        FileUtils.copyURLToFile(downloadUrl, file, 5000, 10000)
-        return file
-    }
+    private suspend fun download(appContext: Context, url: String): File =
+        withContext(Dispatchers.IO) {
+            val downloadUrl = URL(url)
+            val file = File.createTempFile(
+                dlpBinaryName,
+                null,
+                appContext.cacheDir)
+            var completed = false
+            try {
+                FileUtils.copyURLToFile(
+                    downloadUrl,
+                    file,
+                    5000,
+                    10000
+                )
+                completed = true
+                file
+            } finally {
+                if (!completed) {
+                    file.delete()
+                }
+            }
+        }
 
     private fun getYoutubeDLDir(appContext: Context): File {
         val baseDir = File(appContext.noBackupFilesDir, YoutubeDL.baseName)
