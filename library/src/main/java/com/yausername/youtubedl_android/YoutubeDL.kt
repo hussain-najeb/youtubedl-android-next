@@ -78,7 +78,7 @@ object YoutubeDL {
             ffmpegDir.mkdirs()
 
             try {
-                 unzip(ffmpegLib, ffmpegDir)
+                unzip(ffmpegLib, ffmpegDir)
             } catch (e: Exception) {
                 FileUtils.deleteQuietly(ffmpegDir)
                 throw YoutubeDLException("failed to initialize FFmpeg", e)
@@ -242,19 +242,18 @@ object YoutubeDL {
         return null
     }
 
-
+    // for apps that use this library, this function is to be called to cancel the process.
     fun destroyProcessById(id: String): Boolean {
         val process = idProcessMap[id] ?: return false
         Log.d("YoutubeDLRace", "cancel requested id=$id")
 
         cancellingProcessIds.add(id)
-
         return try {
             lingeringProcessTermination(id, process)
             true
-        } finally {
-            idProcessMap.remove(id)
-            idPidMap.remove(id)
+        } catch (e: Exception) {
+            Log.e("YoutubeDLRace", "Failed to terminate process id=$id", e)
+            false
         }
     }
 
@@ -286,6 +285,7 @@ object YoutubeDL {
     }
 
     class CanceledException : Exception()
+
     @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
     fun execute(
         request: YoutubeDLRequest,
@@ -314,7 +314,7 @@ object YoutubeDL {
         processId: String? = null,
         redirectErrorStream: Boolean = false,
         callback: ((Float, Long, String) -> Unit)? = null
-    ) : YoutubeDLResponse {
+    ): YoutubeDLResponse {
         assertInit()
         if (processId != null && idProcessMap.containsKey(processId)) {
             if (!waitForIdRelease(processId)) {
@@ -396,7 +396,8 @@ object YoutubeDL {
         processBuilder.environment().apply {
             this["LD_LIBRARY_PATH"] = ENV_LD_LIBRARY_PATH
             this["SSL_CERT_FILE"] = ENV_SSL_CERT_FILE
-            this["PATH"] = System.getenv("PATH") + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
+            this["PATH"] =
+                System.getenv("PATH") + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
             this["PYTHONHOME"] = ENV_PYTHONHOME
             this["OPENSSL_CONF"] = ENV_ARIA2_OPENSSL_CONF
             this["OPENSSL_MODULES"] = ENV_ARIA2_OPENSSL_MODULES
@@ -441,7 +442,10 @@ object YoutubeDL {
             val err = stderr.toString()
 
             if (exitCode > 0) {
-                if (processId != null && (cancellingProcessIds.contains(processId) || !idProcessMap.containsKey(processId))) {
+                if (processId != null && (cancellingProcessIds.contains(processId) || !idProcessMap.containsKey(
+                        processId
+                    ))
+                ) {
                     throw CanceledException()
                 }
 
@@ -490,6 +494,7 @@ object YoutubeDL {
     }
 
     private const val GITHUB = "https://api.github.com/repos"
+
     enum class UpdateChannel(val apiUrl: String) {
         Stable("$GITHUB/yt-dlp/yt-dlp/releases/latest"),
         Nightly("$GITHUB/yt-dlp/yt-dlp-nightly-builds/releases/latest"),

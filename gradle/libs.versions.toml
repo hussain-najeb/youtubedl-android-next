@@ -19,6 +19,7 @@ exomedia = "5.2.0"
 appversion = "0.1.0"
 appversioncode = "1000"
 animated-vector-drawable = "28.0.0"
+work-runtime-ktx = "2.12.0"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -51,3 +52,4 @@ constraintlayout = { module = "androidx.constraintlayout:constraintlayout", vers
 rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroid" }
 exomedia = { module = "com.devbrackets.android:exomedia", version.ref = "exomedia" }
 animated-vector-drawable = { group = "com.android.support", name = "animated-vector-drawable", version.ref = "animated-vector-drawable" }
+work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work-runtime-ktx" }

@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.work.runtime.ktx)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
