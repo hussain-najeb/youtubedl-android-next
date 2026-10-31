@@ -85,11 +85,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     .setItems(new String[]{"Stable Releases", "Nightly Releases", "Master Releases"},
                             (dialogInterface, which) -> {
                                 if (which == 0)
-                                    updateYoutubeDL(YoutubeDL.UpdateChannel._STABLE);
+                                    updateYoutubeDL(YoutubeDL.UpdateChannel.Stable);
                                 else if (which == 1)
-                                    updateYoutubeDL(YoutubeDL.UpdateChannel._NIGHTLY);
+                                    updateYoutubeDL(YoutubeDL.UpdateChannel.Nightly);
                                 else
-                                    updateYoutubeDL(YoutubeDL.UpdateChannel._MASTER);
+                                    updateYoutubeDL(YoutubeDL.UpdateChannel.Master);
                             })
                     .create();
             dialog.show();

@@ -1,10 +1,8 @@
 package com.yausername.youtubedl_android
 
 import android.content.Context
-import android.os.Build
 import android.os.Process.sendSignal
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.yausername.youtubedl_android.mapper.VideoInfo
 import com.yausername.youtubedl_common.SharedPrefsHelper
@@ -326,31 +324,18 @@ object YoutubeDL {
                 throw YoutubeDLException("Process ID already exists")
             }
         }
+
         // disable caching unless explicitly requested
         if (!request.hasOption("--cache-dir") || request.getOption("--cache-dir") == null) {
             request.addOption("--no-cache-dir")
         }
 
-        // This automatically makes Quick JS available at runtime without outside invocation,
-        // it's commented out but can be uncommented if you want to make it work off-rip on runtime.
 
-//        val quickJsCli = File(
-//            ffmpegPath!!.parentFile,
-//            "libqjs-cli.so"
-//        )
-//
-//        if (quickJsCli.exists()) {
-//            request.addOption(
-//                "--js-runtimes",
-//                "quickjs:${quickJsCli.absolutePath}"
-//            )
-//        }
+        // For curl_cffi and cffi, have something like "request.addOption("--impersonate", "chrome")"
+        // the chrome part is options, the library can have any browser as an option for TLS, tho chrome is recommended.
 
-        // For curl_cffi and cffi, have something like "request.addOption("--impersonate", "chrome")".
-        // I will try to squash bugs as much as I can, I also suggest having this feature as "Cutting-Edge"
-        // or "Experimental" and ask users to report bugs, so it doesn't mess with anything working currently.
-        // As I stated in the PR, This feature is almost guaranteed to either not work or need extra work on x86.
 
+        // this sets aria2 as on by default
         if (request.buildCommand().contains("libaria2c.so")) {
             request
                 .addOption("--external-downloader-args", "aria2c:--summary-interval=1")
@@ -360,14 +345,15 @@ object YoutubeDL {
                 )
         }
 
-        /* Set ffmpeg location, See https://github.com/xibr/ytdlp-lazy/issues/1 */
         request.addOption("--ffmpeg-location", ffmpegPath!!.absolutePath)
         val process: Process
         val exitCode: Int
-        val outBuffer = StringBuffer() //stdout
-        val errBuffer = StringBuffer() //stderr
+        val stdout = StringBuffer()
+        val stderr = StringBuffer()
         val startTime = System.currentTimeMillis()
-        val args = request.buildCommand().map { arg ->
+
+
+        val arguments = request.buildCommand().map { arg ->
             if (arg == "libaria2c.so") {
                 aria2cPath!!.absolutePath
             } else {
@@ -406,15 +392,14 @@ object YoutubeDL {
             )
         }
 
-        command.addAll(args)
+        command.addAll(arguments)
         val processBuilder = ProcessBuilder(command)
             .redirectErrorStream(redirectErrorStream)
 
         processBuilder.environment().apply {
             this["LD_LIBRARY_PATH"] = ENV_LD_LIBRARY_PATH
             this["SSL_CERT_FILE"] = ENV_SSL_CERT_FILE
-            this["PATH"] =
-                System.getenv("PATH") + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
+            this["PATH"] = System.getenv("PATH") + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
             this["PYTHONHOME"] = ENV_PYTHONHOME
             this["OPENSSL_CONF"] = ENV_ARIA2_OPENSSL_CONF
             this["OPENSSL_MODULES"] = ENV_ARIA2_OPENSSL_MODULES
@@ -443,8 +428,8 @@ object YoutubeDL {
         try {
             val outStream = process.inputStream
             val errStream = process.errorStream
-            val stdOutProcessor = StreamProcessExtractor(outBuffer, outStream, callback)
-            val stdErrProcessor = StreamGobbler(errBuffer, errStream)
+            val stdOutProcessor = StreamProcessExtractor(stdout, outStream, callback)
+            val stdErrProcessor = StreamGobbler(stderr, errStream)
 
             exitCode = try {
                 stdOutProcessor.join()
@@ -455,12 +440,11 @@ object YoutubeDL {
                 throw e
             }
 
-            val out = outBuffer.toString()
-            val err = errBuffer.toString()
+            val out = stdout.toString()
+            val err = stderr.toString()
 
             if (exitCode > 0) {
-                if (processId != null &&
-                    (cancellingProcessIds.contains(processId) || !idProcessMap.containsKey(processId))) {
+                if (processId != null && (cancellingProcessIds.contains(processId) || !idProcessMap.containsKey(processId))) {
                     throw CanceledException()
                 }
 
@@ -485,7 +469,7 @@ object YoutubeDL {
     @Throws(YoutubeDLException::class)
     fun updateYoutubeDL(
         appContext: Context,
-        updateChannel: UpdateChannel = UpdateChannel.STABLE
+        updateChannel: UpdateChannel = UpdateChannel.Nightly
     ): UpdateStatus? {
         assertInit()
         return try {
@@ -503,27 +487,16 @@ object YoutubeDL {
         return YoutubeDLUpdater.versionName(appContext)
     }
 
+
     enum class UpdateStatus {
         DONE, ALREADY_UP_TO_DATE
     }
 
-    open class UpdateChannel(val apiUrl: String) {
-        object STABLE : UpdateChannel("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
-        object NIGHTLY :
-            UpdateChannel("https://api.github.com/repos/yt-dlp/yt-dlp-nightly-builds/releases/latest")
-        object MASTER :
-            UpdateChannel("https://api.github.com/repos/yt-dlp/yt-dlp-master-builds/releases/latest")
-
-        companion object {
-            @JvmField
-            val _STABLE: STABLE = STABLE
-
-            @JvmField
-            val _NIGHTLY: NIGHTLY = NIGHTLY
-
-            @JvmField
-            val _MASTER: MASTER = MASTER
-        }
+    private const val GITHUB = "https://api.github.com/repos"
+    enum class UpdateChannel(val apiUrl: String) {
+        Stable("$GITHUB/yt-dlp/yt-dlp/releases/latest"),
+        Nightly("$GITHUB/yt-dlp/yt-dlp-nightly-builds/releases/latest"),
+        Master("$GITHUB/yt-dlp/yt-dlp-master-builds/releases/latest")
     }
 
 
