@@ -2,6 +2,9 @@ package com.yausername.youtubedl_android
 
 import android.content.Context
 import android.os.Build
+import android.os.Process.sendSignal
+import android.util.Log
+import androidx.annotation.RequiresApi
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.yausername.youtubedl_android.mapper.VideoInfo
 import com.yausername.youtubedl_common.SharedPrefsHelper
@@ -28,6 +31,8 @@ object YoutubeDL {
     private var ENV_ARIA2_OPENSSL_MODULES: String? = null
     private var TMPDIR: String = ""
     private val idProcessMap = Collections.synchronizedMap(HashMap<String, Process>())
+    private val idPidMap = Collections.synchronizedMap(HashMap<String, Int>())
+    private val cancellingProcessIds = Collections.synchronizedSet(HashSet<String>())
 
     @Synchronized
     @Throws(YoutubeDLException::class)
@@ -186,11 +191,13 @@ object YoutubeDL {
         check(initialized) { "instance not initialized" }
     }
 
+
     @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
     fun getInfo(url: String): VideoInfo {
         val request = YoutubeDLRequest(url)
         return getInfo(request)
     }
+
 
     @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
     fun getInfo(request: YoutubeDLRequest): VideoInfo {
@@ -221,20 +228,50 @@ object YoutubeDL {
         }
     }
 
-    private fun destroyChildProcesses(id: String) : Boolean {
-        try {
-            val command = "pstree -p $id | grep -oP '\\(\\K[^\\)]+' | xargs kill"
-            val processBuilder = ProcessBuilder("/system/bin/sh", "-c", command)
-            val process = processBuilder.start()
-            val res = process.waitFor()
-            return res == 0
-        }catch (e: Exception) {
-            return false
+
+    fun destroyProcessById(id: String): Boolean {
+        val process = idProcessMap[id] ?: return false
+        Log.d("YoutubeDLRace", "cancel requested id=$id")
+
+        cancellingProcessIds.add(id)
+
+        return try {
+            lingeringProcessTermination(id, process)
+            true
+        } finally {
+            idProcessMap.remove(id)
+            idPidMap.remove(id)
+        }
+    }
+
+    private fun destroyChildProcesses(pid: Int): Boolean {
+        return try {
+            val executionCommand = """
+            kill_descendants() {
+                for child in ${'$'}(cat "/proc/${'$'}1/task/${'$'}1/children" 2>/dev/null); do
+                    kill_descendants "${'$'}child"
+                    kill -KILL "${'$'}child" 2>/dev/null
+                done
+            }
+            kill_descendants $pid
+        """.trimIndent()
+            val terminator = ProcessBuilder(
+                "/system/bin/sh",
+                "-c",
+                executionCommand
+            ).start()
+            terminator.waitFor() == 0
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            Log.e("YoutubeDL", "Child termination interrupted", e)
+            false
+        } catch (e: Exception) {
+            Log.e("YoutubeDL", "Failed to terminate descendants of $pid", e)
+            false
         }
     }
 
     class CanceledException : Exception()
-
     @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
     fun execute(
         request: YoutubeDLRequest,
@@ -243,6 +280,7 @@ object YoutubeDL {
     ): YoutubeDLResponse {
         return executeImpl(request, processId, false, callback)
     }
+
 
     @JvmOverloads
     @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
@@ -254,6 +292,7 @@ object YoutubeDL {
     ): YoutubeDLResponse {
         return executeImpl(request, processId, redirectErrorStream, callback)
     }
+
 
     @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
     private fun executeImpl(
@@ -313,7 +352,32 @@ object YoutubeDL {
             }
         }
         val command: MutableList<String?> = ArrayList()
-        command.addAll(listOf(pythonPath!!.absolutePath, ytdlpPath!!.absolutePath))
+
+        if (pidFile != null) {
+            val shellCommand = """
+        echo ${'$'}${'$'} > "${pidFile.absolutePath}"
+        exec "${'$'}@"
+    """.trimIndent()
+
+            command.addAll(
+                listOf(
+                    "/system/bin/sh",
+                    "-c",
+                    shellCommand,
+                    "sh",
+                    pythonPath!!.absolutePath,
+                    ytdlpPath!!.absolutePath
+                )
+            )
+        } else {
+            command.addAll(
+                listOf(
+                    pythonPath!!.absolutePath,
+                    ytdlpPath!!.absolutePath
+                )
+            )
+        }
+
         command.addAll(args)
         val processBuilder = ProcessBuilder(command)
             .redirectErrorStream(redirectErrorStream)
@@ -338,6 +402,14 @@ object YoutubeDL {
 
         if (processId != null) {
             idProcessMap[processId] = process
+            Log.d("YoutubeDLRace", "registered id=$processId")
+
+            pidFile?.let {
+                readPidFile(it)?.let { pid ->
+                    idPidMap[processId] = pid
+                }
+                FileUtils.deleteQuietly(it)
+            }
         }
 
         try {
