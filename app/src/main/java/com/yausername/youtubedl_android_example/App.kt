@@ -1,64 +1,44 @@
-package com.yausername.youtubedl_android_example;
+package com.yausername.youtubedl_android_example
 
-import android.app.Application;
-import android.util.Log;
-import android.widget.Toast;
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
-import com.yausername.aria2c.Aria2c;
-import com.yausername.ffmpeg.FFmpeg;
-import com.yausername.youtubedl_android.YoutubeDL;
-import com.yausername.youtubedl_android.YoutubeDLException;
+@Composable
+fun MainApp() {
 
-import io.reactivex.Completable;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.exceptions.UndeliverableException;
-import io.reactivex.observers.DisposableCompletableObserver;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.schedulers.Schedulers;
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(color = Color(0xFF293141))
+    ) {
 
-public class App extends Application {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+                .weight(1f)
+        ) {
 
-    private static final String TAG = "App";
+        }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+        Box(
+            modifier = Modifier
+                .padding(10.dp)
+                .weight(1f)
+        ) {
+            TextField(
+                value = ,
 
-        configureRxJavaErrorHandler();
-        Completable.fromAction(this::initLibraries).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new DisposableCompletableObserver() {
-            @Override
-            public void onComplete() {
-                // it worked
-            }
+            )
 
-            @Override
-            public void onError(Throwable e) {
-                Log.e(TAG, "failed to initialize youtubedl-android", e);
-                Toast.makeText(getApplicationContext(), "initialization failed: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void configureRxJavaErrorHandler() {
-        RxJavaPlugins.setErrorHandler(e -> {
-
-            if (e instanceof UndeliverableException) {
-                // As UndeliverableException is a wrapper, get the cause of it to get the "real" exception
-                e = e.getCause();
-            }
-
-            if (e instanceof InterruptedException) {
-                // fine, some blocking code was interrupted by a dispose call
-                return;
-            }
-
-            Log.e(TAG, "Undeliverable exception received, not sure what to do", e);
-        });
-    }
-
-    private void initLibraries() throws YoutubeDLException {
-        YoutubeDL.getInstance().init(this);
-        FFmpeg.getInstance().init(this);
-        Aria2c.getInstance().init(this);
+        }
     }
 }

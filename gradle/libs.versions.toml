@@ -1,0 +1,53 @@
+[versions]
+agp = "8.13.2"
+kotlin = "2.4.21"
+appcompat = "1.8.0"
+junit = "4.13.2"
+android-junit = "1.3.0"
+espresso = "3.7.0"
+jackson = "2.22.4"
+commons-io = "2.22.0"
+commons-compress = "1.28.0"
+core-ktx = "1.19.1"
+coroutines = "1.11.0"
+lifecycle = "2.11.0"
+activity-compose = "1.13.0"
+compose-bom = "2026.09.00"
+constraintlayout = "2.2.2"
+rxandroid = "2.1.1"
+exomedia = "5.2.0"
+appversion = "0.1.0"
+appversioncode = "1000"
+animated-vector-drawable = "28.0.0"
+
+[plugins]
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+[libraries]
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+junit = { module = "junit:junit", version.ref = "junit" }
+android-junit = { module = "androidx.test.ext:junit", version.ref = "android-junit" }
+espresso = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commons-compress" }
+core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
+rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroid" }
+exomedia = { module = "com.devbrackets.android:exomedia", version.ref = "exomedia" }
+animated-vector-drawable = { group = "com.android.support", name = "animated-vector-drawable", version.ref = "animated-vector-drawable" }

@@ -1,16 +1,22 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
+    buildFeatures {
+        compose = true
+    }
+
     namespace = "com.yausername.youtubedl_android_example"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.yausername.youtubedl_android_example"
         minSdk = 24
-        targetSdk = 34
+        //noinspection EditedTargetSdkVersion
+        targetSdk = 36
         versionName = rootProject.ext["versionName"] as String
         versionCode = rootProject.ext["versionCode"] as Int
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -27,7 +33,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
+                getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
@@ -59,13 +65,25 @@ dependencies {
     implementation(project(":ffmpeg"))
     implementation(project(":aria2c"))
 
-    implementation("androidx.appcompat:appcompat:${rootProject.extra["appCompatVer"]}")
-    implementation("androidx.constraintlayout:constraintlayout:1.1.3")
-    implementation("androidx.core:core-ktx:${rootProject.extra["coreKtxVer"]}")
-    testImplementation("junit:junit:${rootProject.extra["junitVer"]}")
-    androidTestImplementation("androidx.test.ext:junit:${rootProject.extra["androidJunitVer"]}")
-    androidTestImplementation("androidx.test.espresso:espresso-core:${rootProject.extra["espressoVer"]}")
+    implementation(platform(libs.compose.bom))
+    implementation(libs.activity.compose)
+    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
+    debugImplementation(libs.compose.ui.tooling)
+    implementation(libs.appcompat)
+    implementation(libs.constraintlayout)
+    implementation(libs.core.ktx)
+    implementation(libs.animated.vector.drawable)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.android.junit)
+    androidTestImplementation(libs.espresso)
 
-    implementation("io.reactivex.rxjava2:rxandroid:2.1.0")
-    implementation("com.devbrackets.android:exomedia:5.1.0")
+    implementation(libs.rxandroid)
+    implementation(libs.exomedia)
 }

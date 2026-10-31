@@ -1,15 +1,16 @@
 package com.yausername.youtubedl_common
 
 import android.content.Context
+import androidx.core.content.edit
 
 object SharedPrefsHelper {
     private const val sharedPrefsName = "youtubedl-android"
     @JvmStatic
     fun update(appContext: Context, key: String?, value: String?) {
         val pref = appContext.getSharedPreferences(sharedPrefsName, Context.MODE_PRIVATE)
-        val editor = pref.edit()
-        editor.putString(key, value)
-        editor.apply()
+        pref.edit {
+            putString(key, value)
+        }
     }
 
     @JvmStatic

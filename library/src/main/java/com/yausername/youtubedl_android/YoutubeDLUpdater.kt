@@ -20,7 +20,6 @@ internal object YoutubeDLUpdater {
     private const val dlpVersionKey = "dlpVersion"
     private const val dlpVersionNameKey = "dlpVersionName"
 
-    @Throws(IOException::class, YoutubeDLException::class)
     internal suspend fun update(
         appContext: Context?,
         youtubeDLChannel: UpdateChannel = UpdateChannel.Stable
@@ -56,33 +55,35 @@ internal object YoutubeDLUpdater {
     }
 
     @Throws(IOException::class)
-    private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: UpdateChannel): JsonNode? {
-        val url = URL(youtubeDLChannel.apiUrl)
-        val json = YoutubeDL.objectMapper.readTree(url)
-        val newVersion = getTag(json)
-        val oldVersion = SharedPrefsHelper[appContext, dlpVersionKey]
-        return if (newVersion == oldVersion) {
-            null
-        } else json
-    }
+    private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: UpdateChannel): JsonNode? =
+        withContext(Dispatchers.IO) {
+            val url = URL(youtubeDLChannel.apiUrl)
+            val json = YoutubeDL.objectMapper.readTree(url)
+            val newVersion = getTag(json)
+            val oldVersion = SharedPrefsHelper[appContext, dlpVersionKey]
+                return@withContext if (newVersion == oldVersion) null
+                    else json
+        }
 
-    private suspend fun getTag(json: JsonNode): String = json["tag_name"].asText()
+    private fun getTag(json: JsonNode): String = json["tag_name"].asText()
 
-    private suspend fun getName(json: JsonNode): String = json["name"].asText()
+    private fun getName(json: JsonNode): String = json["name"].asText()
 
     @Throws(YoutubeDLException::class)
-    private suspend fun getDownloadUrl(json: JsonNode): String {
-        val assets = json["assets"] as ArrayNode
-        var downloadUrl = ""
-        for (asset in assets) {
-            if (YoutubeDL.ytdlpBin == asset["name"].asText()) {
-                downloadUrl = asset["browser_download_url"].asText()
-                break
+    private suspend fun getDownloadUrl(json: JsonNode): String =
+        withContext(Dispatchers.IO) {
+            val assets = json["assets"] as? ArrayNode
+                ?: throw YoutubeDLException(
+                    IOException("Release response does not contain an assets array")
+                )
+            return@withContext assets.firstOrNull {
+                it["name"].asText() == YoutubeDL.ytdlpBin
             }
+                ?.get("browser_download_url")
+                ?.asText()
+                ?: throw YoutubeDLException(IOException("Could not find download URL for ${YoutubeDL.ytdlpBin}"))
         }
-        if (downloadUrl.isEmpty()) throw YoutubeDLException("unable to get download url")
-        return downloadUrl
-    }
+
 
     @Throws(IOException::class)
     private suspend fun download(appContext: Context, url: String): File =
@@ -91,7 +92,8 @@ internal object YoutubeDLUpdater {
             val file = File.createTempFile(
                 dlpBinaryName,
                 null,
-                appContext.cacheDir)
+                appContext.cacheDir
+            )
             var completed = false
             try {
                 FileUtils.copyURLToFile(

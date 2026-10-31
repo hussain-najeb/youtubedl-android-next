@@ -35,13 +35,13 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
     implementation(project(":common"))
-    implementation("androidx.core:core-ktx:${rootProject.extra["coreKtxVer"]}")
+    implementation(libs.core.ktx)
     compileOnly(project(":library"))
 
-    implementation("androidx.appcompat:appcompat:${rootProject.extra["appCompatVer"]}")
-    testImplementation("junit:junit:${rootProject.extra["junitVer"]}")
-    androidTestImplementation("androidx.test.ext:junit:${rootProject.extra["androidJunitVer"]}")
-    androidTestImplementation("androidx.test.espresso:espresso-core:${rootProject.extra["espressoVer"]}")
+    implementation(libs.appcompat)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.android.junit)
+    androidTestImplementation(libs.espresso)
 
-    implementation("commons-io:commons-io:${rootProject.extra["commonsIoVer"]}")
+    implementation(libs.commons.io)
 }

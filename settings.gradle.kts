@@ -1,3 +1,11 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 include(":common", ":app", ":library", ":ffmpeg", ":aria2c")
 
 dependencyResolutionManagement {

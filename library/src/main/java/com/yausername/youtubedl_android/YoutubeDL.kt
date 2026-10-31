@@ -8,13 +8,14 @@ import com.yausername.youtubedl_android.mapper.VideoInfo
 import com.yausername.youtubedl_common.SharedPrefsHelper
 import com.yausername.youtubedl_common.SharedPrefsHelper.update
 import com.yausername.youtubedl_common.utils.ZipUtils.unzip
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.IOException
 import java.util.Collections
 import kotlin.collections.set
 
-@Suppress("ConstPropertyName")
 object YoutubeDL {
     private var initialized = false
     private var pythonPath: File? = null
@@ -31,41 +32,43 @@ object YoutubeDL {
     private val idProcessMap = Collections.synchronizedMap(HashMap<String, Process>())
     private val idPidMap = Collections.synchronizedMap(HashMap<String, Int>())
     private val cancellingProcessIds = Collections.synchronizedSet(HashSet<String>())
+    private val updateMutex = Mutex()
+    private val initMutex = Mutex()
 
-    @Synchronized
-    @Throws(YoutubeDLException::class)
-    fun init(appContext: Context) {
-        if (initialized) return
-        val baseDir = File(appContext.noBackupFilesDir, baseName)
-        if (!baseDir.exists()) baseDir.mkdir()
-        val packagesDir = File(baseDir, packagesRoot)
-        binDir = File(appContext.applicationInfo.nativeLibraryDir)
-        pythonPath = File(binDir, pythonBinName)
-        ffmpegPath = File(binDir, ffmpegBinName)
-        val pythonDir = File(packagesDir, pythonDirName)
-        val ffmpegDir = File(packagesDir, ffmpegDirName)
-        val aria2cDir = File(packagesDir, aria2cDirName)
-        val ytdlpDir = File(baseDir, ytdlpDirName)
-        ytdlpPath = File(ytdlpDir, ytdlpBin)
-        ENV_LD_LIBRARY_PATH = pythonDir.absolutePath + "/usr/lib" + ":" +
-        ffmpegDir.absolutePath + "/usr/lib" + ":" +
-        aria2cDir.absolutePath + "/usr/lib" + ":" +
-        binDir!!.absolutePath
-        ENV_SSL_CERT_FILE = pythonDir.absolutePath + "/usr/lib/python3.14/site-packages/certifi/cacert.pem"
-        ENV_PYTHONHOME = pythonDir.absolutePath + "/usr"
-        ENV_ARIA2_OPENSSL_CONF =
-            File(aria2cDir, "usr/etc/tls/openssl.cnf").absolutePath
-        ENV_ARIA2_OPENSSL_MODULES =
-            File(aria2cDir, "usr/lib/ossl-modules").absolutePath
-        TMPDIR = appContext.cacheDir.absolutePath
-        initFFmpeg(appContext, ffmpegDir)
-        initPython(appContext, pythonDir)
-        initAria2c(appContext, aria2cDir)
-        init_ytdlp(appContext, ytdlpDir)
-        initialized = true
+
+    suspend fun init(appContext: Context) {
+        initMutex.withLock {
+            if (initialized) return
+            val baseDir = File(appContext.noBackupFilesDir, baseName)
+            if (!baseDir.exists()) baseDir.mkdir()
+            val packagesDir = File(baseDir, packagesRoot)
+            binDir = File(appContext.applicationInfo.nativeLibraryDir)
+            pythonPath = File(binDir, pythonBinName)
+            ffmpegPath = File(binDir, ffmpegBinName)
+            val pythonDir = File(packagesDir, pythonDirName)
+            val ffmpegDir = File(packagesDir, ffmpegDirName)
+            val aria2cDir = File(packagesDir, aria2cDirName)
+            val ytdlpDir = File(baseDir, ytdlpDirName)
+            ytdlpPath = File(ytdlpDir, ytdlpBin)
+            ENV_LD_LIBRARY_PATH = pythonDir.absolutePath + "/usr/lib" + ":" +
+                 ffmpegDir.absolutePath + "/usr/lib" + ":" +
+                 aria2cDir.absolutePath + "/usr/lib" + ":" +
+                 binDir!!.absolutePath
+            ENV_SSL_CERT_FILE = pythonDir.absolutePath + "/usr/lib/python3.14/site-packages/certifi/cacert.pem"
+            ENV_PYTHONHOME = pythonDir.absolutePath + "/usr"
+            ENV_ARIA2_OPENSSL_CONF =
+                File(aria2cDir, "usr/etc/tls/openssl.cnf").absolutePath
+            ENV_ARIA2_OPENSSL_MODULES =
+                File(aria2cDir, "usr/lib/ossl-modules").absolutePath
+            TMPDIR = appContext.cacheDir.absolutePath
+            initFFmpeg(appContext, ffmpegDir)
+            initPython(appContext, pythonDir)
+            initAria2c(appContext, aria2cDir)
+            init_ytdlp(appContext, ytdlpDir)
+            initialized = true
+        }
     }
 
-    @Throws(YoutubeDLException::class)
     private fun initFFmpeg(appContext: Context, ffmpegDir: File) {
         val ffmpegLib = File(binDir, ffmpegLibName)
         val ffmpegSize = ffmpegLib.length().toString()
@@ -92,7 +95,6 @@ object YoutubeDL {
     private fun updateFFmpeg(appContext: Context, version: String) {
         update(appContext, ffmpegLibVersion, version)
     }
-
 
     @Throws(YoutubeDLException::class)
     fun init_ytdlp(appContext: Context, ytdlpDir: File) {
@@ -144,7 +146,6 @@ object YoutubeDL {
         update(appContext, pythonLibVersion, version)
     }
 
-    @Throws(YoutubeDLException::class)
     fun initAria2c(appContext: Context, aria2cDir: File) {
         val aria2cLib = File(binDir, aria2cLibName)
         val aria2cSize = aria2cLib.length().toString()
@@ -189,15 +190,11 @@ object YoutubeDL {
         check(initialized) { "instance not initialized" }
     }
 
-
-    @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
     fun getInfo(url: String): VideoInfo {
         val request = YoutubeDLRequest(url)
         return getInfo(request)
     }
 
-
-    @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
     fun getInfo(request: YoutubeDLRequest): VideoInfo {
         request.addOption("--dump-json")
         val response = execute(request, null, null)
@@ -465,15 +462,15 @@ object YoutubeDL {
         }
     }
 
-    @Synchronized
-    @Throws(YoutubeDLException::class)
-    fun updateYoutubeDL(
+    suspend fun updateYoutubeDL(
         appContext: Context,
         updateChannel: UpdateChannel = UpdateChannel.Nightly
     ): UpdateStatus? {
         assertInit()
         return try {
-            YoutubeDLUpdater.update(appContext, updateChannel)
+            updateMutex.withLock {
+                YoutubeDLUpdater.update(appContext, updateChannel)
+            }
         } catch (e: IOException) {
             throw YoutubeDLException("failed to update youtube-dl", e)
         }
