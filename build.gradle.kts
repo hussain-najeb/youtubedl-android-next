@@ -1,6 +1,4 @@
-plugins {
-    alias(libs.plugins.kotlin.android) apply false
-}
+plugins {}
 
 val versionCode = libs.versions.appversioncode.get().toInt()
 val versionName = libs.versions.appversion.get()
@@ -9,6 +7,7 @@ extra.apply {
     set("versionCode", versionCode)
     set("versionName", versionName)
 }
+
 
 allprojects {
     group = "com.github.yausername"

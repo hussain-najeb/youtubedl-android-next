@@ -1,4 +1,4 @@
-package com.yausername.youtubedl_android_example
+package com.yausername.youtubeDLAndroidExampleCore
 
 import android.content.Context
 import androidx.work.CoroutineWorker

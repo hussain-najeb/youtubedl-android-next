@@ -1,11 +1,12 @@
 [versions]
-agp = "8.13.2"
-kotlin = "2.4.21"
+agp = "9.1.1"
+kotlin = "2.2.10"
 appcompat = "1.8.0"
 junit = "4.13.2"
 android-junit = "1.3.0"
 espresso = "3.7.0"
 jackson = "2.22.4"
+jackson-annotations = "2.22"
 commons-io = "2.22.0"
 commons-compress = "1.28.0"
 core-ktx = "1.19.1"
@@ -20,6 +21,7 @@ appversion = "0.1.0"
 appversioncode = "1000"
 animated-vector-drawable = "28.0.0"
 work-runtime-ktx = "2.12.0"
+material = "1.14.0"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -32,7 +34,7 @@ junit = { module = "junit:junit", version.ref = "junit" }
 android-junit = { module = "androidx.test.ext:junit", version.ref = "android-junit" }
 espresso = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commons-compress" }
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
@@ -42,7 +44,7 @@ activity-compose = { module = "androidx.activity:activity-compose", version.ref 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
-compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material3 = { module = "androidx.compose.material3:material3", version = "1.5.0-beta02" }
 compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
@@ -53,3 +55,4 @@ rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroi
 exomedia = { module = "com.devbrackets.android:exomedia", version.ref = "exomedia" }
 animated-vector-drawable = { group = "com.android.support", name = "animated-vector-drawable", version.ref = "animated-vector-drawable" }
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work-runtime-ktx" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }

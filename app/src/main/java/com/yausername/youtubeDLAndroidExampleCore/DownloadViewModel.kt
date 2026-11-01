@@ -1,4 +1,4 @@
-package com.yausername.youtubedl_android_example
+package com.yausername.youtubeDLAndroidExampleCore
 
 import android.content.Context
 import android.util.Log
@@ -13,7 +13,6 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.yausername.youtubedl_android.YoutubeDL
-import com.yausername.youtubedl_android.YoutubeDLException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
@@ -182,21 +181,27 @@ class DownloadViewModel : ViewModel() {
                 throw e
             } catch (e: Exception) {
                 Log.e("download viewmodel", "download viewmodel failed", e)
+                if (activeProcess == url.id) {
+                    activeProcess = null
+                    errorHandle(e)
+                }
             }
         }
-        fun cancel(context: Context) {
-            activeProcess?.let { id ->
-                YoutubeDL.destroyProcessById(id.toString())
-                WorkManager.getInstance(context).cancelWorkById(id)
-            }
-            job?.cancel()
-            job = null
-            state = DownloadState.Idle
-            downloadUrl = ""
-            downloaderLogs = ""
-            activeProcess = null
-            metadata = null
+    }
+
+    fun cancel(context: Context) {
+        activeProcess?.let { id ->
+            YoutubeDL.destroyProcessById(id.toString())
+            WorkManager.getInstance(context).cancelWorkById(id)
         }
+        job?.cancel()
+        job = null
+        state = DownloadState.Idle
+        downloadUrl = ""
+        downloaderLogs = ""
+        activeProcess = null
+        metadata = null
+    }
 
         fun errorHandle(e: Exception) {
             Log.e("error viewmodel", "Fetch failed: ${e.javaClass.simpleName}", e)
@@ -206,7 +211,7 @@ class DownloadViewModel : ViewModel() {
             }
             state = DownloadState.Error(raw)
         }
-    }
+
 
     fun parser(json: String): DownMetadata? {
         return try {

@@ -1,7 +1,12 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlin.compose)
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+    }
 }
 
 android {
@@ -9,8 +14,8 @@ android {
         compose = true
     }
 
-    namespace = "com.yausername.youtubedl_android_example"
-    compileSdk = 36
+    namespace = "com.yausername.youtubeDLAndroidExampleCore"
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.yausername.youtubedl_android_example"
@@ -40,8 +45,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     splits.abi {
@@ -76,6 +81,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.work.runtime.ktx)
+    implementation(libs.material)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
