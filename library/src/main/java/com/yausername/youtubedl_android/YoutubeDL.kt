@@ -8,8 +8,10 @@ import com.yausername.youtubedl_android.mapper.VideoInfo
 import com.yausername.youtubedl_common.SharedPrefsHelper
 import com.yausername.youtubedl_common.SharedPrefsHelper.update
 import com.yausername.youtubedl_common.utils.ZipUtils.unzip
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.IOException
@@ -36,9 +38,9 @@ object YoutubeDL {
     private val initMutex = Mutex()
 
 
-    suspend fun init(appContext: Context) {
+    suspend fun init(appContext: Context) = withContext(Dispatchers.IO) {
         initMutex.withLock {
-            if (initialized) return
+            if (initialized) return@withLock
             val baseDir = File(appContext.noBackupFilesDir, baseName)
             if (!baseDir.exists()) baseDir.mkdir()
             val packagesDir = File(baseDir, packagesRoot)
