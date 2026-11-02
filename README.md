@@ -4,6 +4,14 @@
 
 ## Improvements
 
+###
+
+- Replace all **Java** code with **Kotlin** code  
+
+### Example App
+
+- Improved the example app to make it use Compose instead of the views system
+
 ### Download Process Management
 
 - Introduces a more robust system for managing download processes.
