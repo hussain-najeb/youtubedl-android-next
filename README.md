@@ -58,7 +58,7 @@ It can also be used alongside Aria2-Next and QuickJS-NG to provide a more capabl
 
 ## Documentation and Build Scripts
 
-You do not need to inspect the build scripts to use the project. However, if you are interested in how the native components are built for the supported Android ABIs, you can review the [Build Documentation](Build-all.md).
+You do not need to inspect the build scripts to use the project. However, if you are interested in how the native components are built for the supported Android ABIs, refer to [Build Documentation](BUILD-ALL.md).
 
 If you encounter an issue with any of the build scripts, please report it so that it can be investigated and corrected.
 

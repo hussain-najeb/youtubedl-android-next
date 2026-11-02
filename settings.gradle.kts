@@ -6,7 +6,7 @@ pluginManagement {
     }
 }
 
-include(":common", ":app", ":library", ":ffmpeg", ":aria2c")
+include(":example-app", ":main-lib")
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)

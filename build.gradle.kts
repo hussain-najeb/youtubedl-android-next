@@ -1,22 +1,13 @@
-plugins {}
-
-val versionCode = libs.versions.appversioncode.get().toInt()
-val versionName = libs.versions.appversion.get()
-
-extra.apply {
-    set("versionCode", versionCode)
-    set("versionName", versionName)
+// Root project metadata and plugin versions for subprojects.
+plugins {
+    base
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.ksp) apply false
 }
 
-
-allprojects {
-    group = "com.github.yausername"
-    version = versionName
-}
-
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
-}
-
-
+group = "com.github.hussain-najeb"
+version = libs.versions.appversion.get()
 
