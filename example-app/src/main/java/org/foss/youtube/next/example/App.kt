@@ -126,7 +126,6 @@ fun StateSwitch(
             is DownloadState.Finished -> {
                 Finished(
                     targetState.metadata,
-                    progress = 100f,
                     onCancel = { viewModel.cancel(context) },
                 )
             }

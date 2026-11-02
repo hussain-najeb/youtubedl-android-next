@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import okhttp3.internal.wait
 
 
 @Composable
@@ -45,6 +47,7 @@ fun ButtonExample(
 
     Button(
         modifier = modifier
+            .fillMaxWidth()
             .graphicsLayer {
                 scaleX = animation
                 scaleY = animation
@@ -62,7 +65,8 @@ fun ButtonExample(
         ),
     ) {
         Text(
-            text = text
+            text = text,
+            fontSize = 18.sp
         )
     }
 }

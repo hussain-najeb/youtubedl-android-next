@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.coil)
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3)

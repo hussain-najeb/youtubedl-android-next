@@ -3,12 +3,11 @@ package org.foss.youtube.next
 import android.content.Context
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
-import org.foss.youtube.next.YoutubeDL.UpdateChannel
-import org.foss.youtube.next.YoutubeDL.UpdateStatus
-import org.foss.youtube.next.YoutubeDL.getInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
+import org.foss.youtube.next.SharedPrefsHelper.update
+import org.foss.youtube.next.YoutubeDL.getInstance
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -20,10 +19,10 @@ internal object YoutubeDLUpdater {
 
     internal suspend fun update(
         appContext: Context?,
-        youtubeDLChannel: UpdateChannel = UpdateChannel.Stable
-    ): UpdateStatus {
+        youtubeDLChannel: YoutubeDL.UpdateChannel = YoutubeDL.UpdateChannel.Stable
+    ): YoutubeDL.UpdateStatus {
         val json = checkForUpdate(appContext!!, youtubeDLChannel)
-            ?: return UpdateStatus.ALREADY_UP_TO_DATE
+            ?: return YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE
         val downloadUrl = getDownloadUrl(json)
         val file = download(appContext, downloadUrl)
         val ytdlpDir = getYoutubeDLDir(
@@ -44,16 +43,16 @@ internal object YoutubeDLUpdater {
             file.delete()
         }
         updateSharedPrefs(appContext, getTag(json), getName(json))
-        return UpdateStatus.DONE
+        return YoutubeDL.UpdateStatus.DONE
     }
 
-    private suspend fun updateSharedPrefs(appContext: Context, tag: String, name: String) {
+    private fun updateSharedPrefs(appContext: Context, tag: String, name: String) {
         update(appContext, dlpVersionKey, tag)
         update(appContext, dlpVersionNameKey, name)
     }
 
     @Throws(IOException::class)
-    private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: UpdateChannel): JsonNode? =
+    private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: YoutubeDL.UpdateChannel): JsonNode? =
         withContext(Dispatchers.IO) {
             val url = URL(youtubeDLChannel.apiUrl)
             val json = YoutubeDL.objectMapper.readTree(url)
