@@ -1,24 +1,31 @@
 package org.foss.youtube.next.example
 
 import android.content.Context
+import android.os.Environment
+import androidx.compose.ui.platform.LocalContext
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import org.foss.youtube.next.YoutubeDL
 import org.foss.youtube.next.YoutubeDLRequest
 import kotlinx.coroutines.runBlocking
+import java.io.File
 
 
 const val METADATA = "METADATA:"
 
 
 fun Download(
+    context: Context,
     url: String,
     id: String,
     audio: Audio? = Audio.HIGH,
     video: Video? = Video.SD480,
     callback: (Float, String) -> Unit
 ) {
+    val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
+    val downDir = File(baseDir, id).apply { mkdirs() }
+    val finalDir = "${downDir.absolutePath}/%(title)s.%(ext)s"
     val request = YoutubeDLRequest(url)
 
 
@@ -32,6 +39,10 @@ fun Download(
         request.addOption("-f", it.videoQuality)
     }
 
+    request.addOption("-i")
+    request.addOption("--embed-metadata")
+    request.addOption("-o", finalDir)
+
 
     YoutubeDL.getInstance().execute(request, id) { progress, _, string ->
         callback(progress, string)
@@ -42,19 +53,19 @@ fun Download(
 class DownWorker(context: Context, param: WorkerParameters) : CoroutineWorker(context, param) {
     override suspend fun doWork(): Result {
 
-
         val requestedUrl = inputData.getString(URL)
-        val Id = id.toString()
         val audioInfo = inputData.getString(AUDIO)
         val videoInfo = inputData.getString(VIDEO)
         val audio = audioInfo?.let(Audio::valueOf)
         val video = videoInfo?.let(Video::valueOf)
         var metadata: String? = null
+        val id = id.toString()
 
         return try {
             Download(
+                context = applicationContext,
                 url = requestedUrl ?: "",
-                id = Id,
+                id = id,
                 video = video,
                 audio = audio,
                 callback = { progress, logs ->
@@ -62,7 +73,7 @@ class DownWorker(context: Context, param: WorkerParameters) : CoroutineWorker(co
 
                     if (metadata == null) {
                         val index = logs.indexOf(METADATA)
-                        if (index != 1) {
+                        if (index >= 0) {
                             metadata = logs.substring(index + METADATA.length).trim()
                         }
                     }

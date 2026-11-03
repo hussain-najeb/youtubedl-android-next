@@ -39,9 +39,8 @@ import org.foss.youtube.next.example.ui.button.ButtonExample
 
 @Composable
 fun Loading(
-    //onCancel: () -> Unit
+    onCancel: () -> Unit
 ) {
-
 
     Column(
         modifier = Modifier
@@ -69,7 +68,7 @@ fun Loading(
         Box(modifier = Modifier.fillMaxWidth()) {
             ButtonExample(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = {},
+                onClick = onCancel,
                 text = "Cancel"
             )
         }

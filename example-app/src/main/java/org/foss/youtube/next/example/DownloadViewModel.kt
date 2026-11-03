@@ -16,9 +16,8 @@ import org.foss.youtube.next.YoutubeDL
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.UUID
@@ -66,7 +65,7 @@ class DownloadViewModel : ViewModel() {
     }
 
     var state by mutableStateOf<DownloadState>(DownloadState.Idle)
-    var downloadUrl = ""
+    var downloadUrl by mutableStateOf("")
     var downloaderLogs by mutableStateOf("")
     private var activeProcess by mutableStateOf<UUID?>(null)
     private var job: Job? = null
@@ -78,12 +77,10 @@ class DownloadViewModel : ViewModel() {
         audio: Audio? = null,
         video: Video? = null
     ) {
+
         if (activeProcess != null) return
 
-        state = DownloadState.Loading
-        metadata = null
-
-        val url = OneTimeWorkRequestBuilder<DownWorker>()
+        val request = OneTimeWorkRequestBuilder<DownWorker>()
             .setInputData(
                 workDataOf(
                     URL to downloadUrl,
@@ -91,100 +88,95 @@ class DownloadViewModel : ViewModel() {
                     VIDEO to video?.name
                 )
             ).build()
-
-        activeProcess = url.id
+        state = DownloadState.Loading
+        metadata = null
+        downloaderLogs = ""
+        activeProcess = request.id
 
         job = viewModelScope.launch {
             try {
                 val workManager = WorkManager.getInstance(context)
-                val work = workManager
-                    .getWorkInfosForUniqueWorkFlow(WORK_ID)
-                    .first()
-                    .firstOrNull { it.state.isFinished }
-
-                val workingID = if (work != null) {
-                    activeProcess = work.id
-                    work.id
-                } else null
-
-
                 workManager.enqueueUniqueWork(
                     WORK_ID,
                     ExistingWorkPolicy.KEEP,
-                    url
+                    request
                 )
-                url.id
 
+                val workInfos = workManager
+                    .getWorkInfosForUniqueWorkFlow(WORK_ID)
+                    .first { it.isNotEmpty() }
+                val workingId = workInfos.firstOrNull { it.id == request.id }?.id
+                    ?: workInfos.firstOrNull { !it.state.isFinished }?.id
 
-                if (workingID != null) {
-                    workManager.getWorkInfoByIdFlow(workingID)
-                        .onEach { workInfo ->
-                            workInfo ?: return@onEach
-                            when (workInfo.state) {
-                                WorkInfo.State.RUNNING -> {
-                                    val logs = workInfo.progress.getString("text")
-                                    if (!logs.isNullOrBlank()) {
-                                        downloaderLogs = (downloaderLogs + logs)
-                                    }
+                if (workingId == null) {
+                    activeProcess = null
+                    state = DownloadState.Error("Download work was not enqueued")
+                    return@launch
+                }
+                activeProcess = workingId
 
-                                    if (metadata == null) {
-                                        workInfo.progress.getString("metadataJson")?.let { json ->
-                                            metadata = parser(json)
-                                        }
-                                    }
-
-                                    val progress = workInfo.progress.getFloat("progress", 0f)
-
-                                    state = DownloadState.Downloading(
-                                        progress = progress,
-                                        metadata = metadata
-                                    )
-                                }
-
-                                WorkInfo.State.SUCCEEDED -> {
-                                    val metadata = metadata
-                                        ?: workInfo.outputData.getString("metadataJson")?.let {
-                                            parser(it)
-                                        }
-
-                                    state = DownloadState.Finished(
-                                        metadata = metadata ?: DownMetadata(
-                                            url = "",
-                                            title = "",
-                                            thumbnail = ""
-                                        )
-                                    )
-                                    activeProcess = null
-                                    downloaderLogs = ""
-                                }
-
-                                WorkInfo.State.FAILED -> {
-                                    val error = workInfo.outputData.getString("error")
-                                    error?.let { state = DownloadState.Error(error = it) }
-                                    activeProcess = null
-                                    metadata = null
-                                }
-
-                                WorkInfo.State.CANCELLED -> {
-                                    state = DownloadState.Idle
-                                    activeProcess = null
-                                    downloaderLogs = ""
-                                    metadata = null
-                                }
-
-                                else -> Unit
-                            }
+                workManager.getWorkInfoByIdFlow(workingId).collect { workInfo ->
+                    workInfo ?: return@collect
+                    when (workInfo.state) {
+                        WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
+                            state = DownloadState.Loading
                         }
-                        .launchIn(viewModelScope)
+
+                        WorkInfo.State.RUNNING -> {
+                            val logs = workInfo.progress.getString("text")
+                            if (!logs.isNullOrBlank()) {
+                                downloaderLogs += logs
+                            }
+
+                            if (metadata == null) {
+                                workInfo.progress.getString("metadataJson")?.let { json ->
+                                    metadata = parser(json)
+                                }
+                            }
+
+                            state = DownloadState.Downloading(
+                                progress = workInfo.progress.getFloat("progress", 0f),
+                                metadata = metadata
+                            )
+                        }
+
+                        WorkInfo.State.SUCCEEDED -> {
+                            val completedMetadata = metadata
+                                ?: workInfo.outputData.getString("metadataJson")?.let(::parser)
+
+                            state = DownloadState.Finished(
+                                metadata = completedMetadata ?: DownMetadata(
+                                    url = downloadUrl,
+                                    title = "Download complete",
+                                    thumbnail = null
+                                )
+                            )
+                            activeProcess = null
+                            downloaderLogs = ""
+                        }
+
+                        WorkInfo.State.FAILED -> {
+                            val error = workInfo.outputData.getString("error")
+                                ?: "Download failed without an error message"
+                            state = DownloadState.Error(error)
+                            activeProcess = null
+                            metadata = null
+                        }
+
+                        WorkInfo.State.CANCELLED -> {
+                            state = DownloadState.Idle
+                            activeProcess = null
+                            downloaderLogs = ""
+                            metadata = null
+                        }
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e("download viewmodel", "download viewmodel failed", e)
-                if (activeProcess == url.id) {
-                    activeProcess = null
-                    errorHandle(e)
-                }
+                activeProcess = null
+                errorHandle(e)
             }
         }
     }

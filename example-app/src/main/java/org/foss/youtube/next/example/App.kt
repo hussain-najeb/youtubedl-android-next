@@ -13,14 +13,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.foss.youtube.next.example.ui.button.ButtonExample
 import org.foss.youtube.next.example.ui.cards.Downloading
 import org.foss.youtube.next.example.ui.cards.Error
 import org.foss.youtube.next.example.ui.cards.Finished
@@ -32,17 +35,17 @@ fun MainApp(
     viewModel: DownloadViewModel
 ) {
 
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color(0xFF293141))
     ) {
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(10.dp)
-                .weight(1f)
         ) {
             StateSwitch(
                 state = state,
@@ -51,27 +54,45 @@ fun MainApp(
         }
 
         Box(
-            modifier = Modifier
-                .padding(10.dp)
-                .weight(1f)
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            TextField(
-                value = viewModel.downloadUrl,
-                onValueChange = { text ->
-                    viewModel.downloadUrl = text
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                placeholder = {
-                    Text(
-                        text = "Enter Url",
-                        color = Color(0xFF2b313c),
-                        fontSize = 15.sp
+            Column {
+                Box(
+                    modifier = Modifier
+                        .padding(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = viewModel.downloadUrl,
+                        onValueChange = { text ->
+                            viewModel.downloadUrl = text
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        placeholder = {
+                            Text(
+                                text = "Enter Url",
+                                color = Color(0xFF2b313c),
+                                fontSize = 15.sp
+                            )
+                        }
                     )
                 }
-            )
-
+                Box(
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .fillMaxWidth()
+                ) {
+                    ButtonExample(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            viewModel.Downloader(context)
+                        },
+                        text = "Download"
+                    )
+                }
+            }
         }
     }
 }
@@ -107,7 +128,7 @@ fun StateSwitch(
 
             is DownloadState.Loading -> {
                 Loading(
-                  //  onCancel = { viewModel.cancel(context) }
+                    onCancel = { viewModel.cancel(context) }
                 )
             }
 
@@ -119,7 +140,7 @@ fun StateSwitch(
                         onCancel = { viewModel.cancel(context) },
                     )
                 } ?: Loading(
-                 //   onCancel = { viewModel.cancel(context) }
+                        onCancel = { viewModel.cancel(context) }
                 )
             }
 
