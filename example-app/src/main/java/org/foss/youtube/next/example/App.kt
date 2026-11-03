@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
@@ -69,10 +70,8 @@ fun MainApp(
                         onValueChange = { text ->
                             viewModel.downloadUrl = text
                         },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFfdfefe)),
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp),
+                            .fillMaxWidth(),
                         placeholder = {
                             Text(
                                 text = "Enter Url",
@@ -80,6 +79,26 @@ fun MainApp(
                                 fontSize = 15.sp
                             )
                         },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFFECEFF4),
+                            unfocusedTextColor = Color(0xFFD8DEE9),
+                            errorTextColor = Color(0xFFECEFF4),
+
+                            focusedContainerColor = Color(0xFF3B4252),
+                            unfocusedContainerColor = Color(0xFF3B4252),
+                            errorContainerColor = Color(0xFF3B4252),
+
+                            cursorColor = Color(0xFF88C0D0),
+                            errorCursorColor = Color(0xFFBF616A),
+
+                            focusedBorderColor = Color(0xFF88C0D0),
+                            unfocusedBorderColor = Color(0xFF4C566A),
+                            errorBorderColor = Color(0xFFBF616A),
+
+                            focusedLabelColor = Color(0xFF88C0D0),
+                            unfocusedLabelColor = Color(0xFFD8DEE9),
+                            errorLabelColor = Color(0xFFBF616A),
+                        ),
                     )
                 }
                 Box(

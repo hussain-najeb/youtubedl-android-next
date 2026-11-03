@@ -77,7 +77,7 @@ fun Loading(
 
 @Composable
 fun Downloading(
-    metadata: DownMetadata,
+    metadata: DownMetadata?,
     progress: Float,
     onCancel: () -> Unit
 ) {
@@ -96,7 +96,7 @@ fun Downloading(
             shadowElevation = 5.dp
         ) {
             AsyncImage(
-                model = metadata.thumbnail,
+                model = metadata?.thumbnail,
                 contentDescription = null,
                 contentScale = ContentScale.Crop
             )
