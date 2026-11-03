@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +29,7 @@ import org.foss.youtube.next.example.ui.cards.Downloading
 import org.foss.youtube.next.example.ui.cards.Error
 import org.foss.youtube.next.example.ui.cards.Finished
 import org.foss.youtube.next.example.ui.cards.Loading
+import java.time.format.TextStyle
 
 @Composable
 fun MainApp(
@@ -67,6 +69,7 @@ fun MainApp(
                         onValueChange = { text ->
                             viewModel.downloadUrl = text
                         },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFfdfefe)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(10.dp),
@@ -76,7 +79,7 @@ fun MainApp(
                                 color = Color(0xFF2b313c),
                                 fontSize = 15.sp
                             )
-                        }
+                        },
                     )
                 }
                 Box(

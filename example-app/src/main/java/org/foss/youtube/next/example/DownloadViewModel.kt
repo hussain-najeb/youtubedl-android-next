@@ -129,7 +129,7 @@ class DownloadViewModel : ViewModel() {
                             }
 
                             if (metadata == null) {
-                                workInfo.progress.getString("metadataJson")?.let { json ->
+                                workInfo.progress.getString("metadata")?.let { json ->
                                     metadata = parser(json)
                                 }
                             }
@@ -142,7 +142,7 @@ class DownloadViewModel : ViewModel() {
 
                         WorkInfo.State.SUCCEEDED -> {
                             val completedMetadata = metadata
-                                ?: workInfo.outputData.getString("metadataJson")?.let(::parser)
+                                ?: workInfo.outputData.getString("metadata")?.let(::parser)
 
                             state = DownloadState.Finished(
                                 metadata = completedMetadata ?: DownMetadata(

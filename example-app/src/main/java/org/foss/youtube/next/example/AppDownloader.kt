@@ -28,6 +28,19 @@ fun Download(
     val finalDir = "${downDir.absolutePath}/%(title)s.%(ext)s"
     val request = YoutubeDLRequest(url)
 
+    request.addOption(
+        "--js-runtimes",
+        "quickjs:${context.applicationInfo.nativeLibraryDir}/libqjs-cli.so"
+    )
+    request.addOption("--impersonate", "chrome")
+    request.addOption("--no-simulate")
+
+    request.addOption(
+        "--print",
+        "before_dl:$METADATA%(.{id,extractor_key,title,thumbnail,duration,uploader,filesize,filesize_approx,resolution,abr,ext,webpage_url})j"
+    )
+
+    request.addOption("--progress")
 
     audio?.let {
         request.addOption("-x")
@@ -38,6 +51,7 @@ fun Download(
     video?.let {
         request.addOption("-f", it.videoQuality)
     }
+
 
     request.addOption("-i")
     request.addOption("--embed-metadata")
