@@ -2,7 +2,7 @@ package org.foss.youtube.next.example
 
 import android.content.Context
 import android.os.Environment
-import androidx.compose.ui.platform.LocalContext
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -28,18 +28,9 @@ fun Download(
     val finalDir = "${downDir.absolutePath}/%(title)s.%(ext)s"
     val request = YoutubeDLRequest(url)
 
-    request.addOption(
-        "--js-runtimes",
-        "quickjs:${context.applicationInfo.nativeLibraryDir}/libqjs-cli.so"
-    )
-    request.addOption("--impersonate", "chrome")
+
     request.addOption("--no-simulate")
-
-    request.addOption(
-        "--print",
-        "before_dl:$METADATA%(.{id,extractor_key,title,thumbnail,duration,uploader,filesize,filesize_approx,resolution,abr,ext,webpage_url})j"
-    )
-
+    request.addOption("--print", "before_dl:$METADATA%(.{id,title,thumbnail,ext,webpage_url})j")
     request.addOption("--progress")
 
     audio?.let {
@@ -48,17 +39,24 @@ fun Download(
         request.addOption("--audio-quality", it.audioQuality)
     }
 
-    video?.let {
-        request.addOption("-f", it.videoQuality)
-    }
+    video?.let { request.addOption("-f", it.videoQuality) }
 
+    // Uncomment this to get the Aria2 Next downloader instead of the default one
 
+//    val aria2Argument = "aria2c:--summary-interval=1 -x 12 -s 12 -k 1M"
+//        request.addOption("--downloader", "libaria2c.so")
+//        request.addOption(
+//            "--external-downloader-args", aria2Argument
+//        )
+
+    request.addOption("-v")
     request.addOption("-i")
     request.addOption("--embed-metadata")
     request.addOption("-o", finalDir)
 
 
-    YoutubeDL.getInstance().execute(request, id) { progress, _, string ->
+    YoutubeDL.getInstance().execute(request, id, redirectErrorStream = true) { progress, _, string ->
+        Log.d("YoutubeDL", string)
         callback(progress, string)
     }
 }

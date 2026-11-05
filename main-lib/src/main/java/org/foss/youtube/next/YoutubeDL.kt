@@ -332,11 +332,12 @@ object YoutubeDL {
         request.addOption("--impersonate","chrome")
 
 
+        // To use QuickJS-NG as the JS solver
         val quickJsCli = File(requireNotNull(binDir), "libqjs-cli.so")
         if (quickJsCli.exists()) request.addOption("--js-runtimes", "quickjs:${quickJsCli.absolutePath}")
 
 
-        // this sets aria2 as on by default
+        // this sets aria2 Next as on by default
         if (request.buildCommand().contains("libaria2c.so")) {
             request
                 .addOption("--external-downloader-args", "aria2c:--summary-interval=1")
