@@ -58,10 +58,8 @@ object YoutubeDL {
                  binDir!!.absolutePath
             ENV_SSL_CERT_FILE = pythonDir.absolutePath + "/usr/lib/python3.14/site-packages/certifi/cacert.pem"
             ENV_PYTHONHOME = pythonDir.absolutePath + "/usr"
-            ENV_ARIA2_OPENSSL_CONF =
-                File(aria2cDir, "usr/etc/tls/openssl.cnf").absolutePath
-            ENV_ARIA2_OPENSSL_MODULES =
-                File(aria2cDir, "usr/lib/ossl-modules").absolutePath
+            ENV_ARIA2_OPENSSL_CONF = File(aria2cDir, "usr/etc/tls/openssl.cnf").absolutePath
+            ENV_ARIA2_OPENSSL_MODULES = File(aria2cDir, "usr/lib/ossl-modules").absolutePath
             TMPDIR = appContext.cacheDir.absolutePath
             initFFmpeg(appContext, ffmpegDir)
             initPython(appContext, pythonDir)
@@ -286,13 +284,10 @@ object YoutubeDL {
 
     /**
     Use this function directly if you have a custom request.
-
-     Note that error streaming is off by default, so turn it to true if you
-     want the error stream.
      */
-    fun getCustomInfo(request: YoutubeDLRequest, redirectErrorStream: Boolean = false): VideoInfo {
+    fun getCustomInfo(request: YoutubeDLRequest): VideoInfo {
         request.addOption("--dump-json")
-        val response = execute(request = request, processId = null, redirectErrorStream = redirectErrorStream)
+        val response = execute(request = request, processId = null)
         val videoInfo = try {
             objectMapper.readValue(response.out, VideoInfo::class.java)
         } catch (e: IOException) {
@@ -335,6 +330,10 @@ object YoutubeDL {
 
         // To use curl_cffi and curl_impersonate!
         request.addOption("--impersonate","chrome")
+
+
+        val quickJsCli = File(requireNotNull(binDir), "libqjs-cli.so")
+        if (quickJsCli.exists()) request.addOption("--js-runtimes", "quickjs:${quickJsCli.absolutePath}")
 
 
         // this sets aria2 as on by default
