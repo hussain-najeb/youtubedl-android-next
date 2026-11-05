@@ -1,4 +1,4 @@
-package org.foss.youtube.next
+package org.foss.youtube.common.prefs
 
 import android.content.Context
 import androidx.core.content.edit

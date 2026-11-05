@@ -10,8 +10,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
-import org.foss.youtube.next.SharedPrefsHelper.update
-import org.foss.youtube.next.ZipUtils.unzip
+import org.foss.youtube.common.prefs.SharedPrefsHelper
+import org.foss.youtube.common.prefs.SharedPrefsHelper.update
+import org.foss.youtube.common.prefs.ZipUtils.unzip
 import java.io.File
 import java.io.IOException
 import java.util.Collections
@@ -84,7 +85,6 @@ object YoutubeDL {
                 FileUtils.deleteQuietly(ffmpegDir)
                 throw YoutubeDLException("failed to initialize FFmpeg", e)
             }
-
             updateFFmpeg(appContext, ffmpegSize)
         }
     }
@@ -97,7 +97,6 @@ object YoutubeDL {
         update(appContext, ffmpegLibVersion, version)
     }
 
-    @Throws(YoutubeDLException::class)
     fun init_ytdlp(appContext: Context, ytdlpDir: File) {
         if (!ytdlpDir.exists()) ytdlpDir.mkdirs()
         val ytdlpBinary = File(ytdlpDir, ytdlpBin)
@@ -113,7 +112,6 @@ object YoutubeDL {
         }
     }
 
-    @Throws(YoutubeDLException::class)
     fun initPython(appContext: Context, pythonDir: File) {
         val pythonLib = File(binDir, pythonLibName)
         // using size of lib as version
@@ -191,22 +189,6 @@ object YoutubeDL {
         check(initialized) { "instance not initialized" }
     }
 
-    fun getInfo(url: String): VideoInfo {
-        val request = YoutubeDLRequest(url)
-        return getInfo(request)
-    }
-
-    fun getInfo(request: YoutubeDLRequest): VideoInfo {
-        request.addOption("--dump-json")
-        val response = execute(request, null, null)
-        val videoInfo: VideoInfo = try {
-            objectMapper.readValue(response.out, VideoInfo::class.java)
-        } catch (e: IOException) {
-            throw YoutubeDLException("Unable to parse video information", e)
-        } ?: throw YoutubeDLException("Failed to fetch video information")
-        return videoInfo
-    }
-
     private fun ignoreErrors(request: YoutubeDLRequest, out: String): Boolean {
         return request.hasOption("--dump-json") && out.isNotEmpty() && request.hasOption("--ignore-errors")
     }
@@ -243,7 +225,14 @@ object YoutubeDL {
         return null
     }
 
-    // for apps that use this library, this function is to be called to cancel the process.
+
+    /**
+     For apps that use this library, this function is to be called to cancel the process.
+     Usually you would have an ID that reefers to the WorkManager ID that you would have.
+
+
+     Check the example app code of the library for the optimal integration.
+     */
     fun destroyProcessById(id: String): Boolean {
         val process = idProcessMap[id] ?: return false
         Log.d("YoutubeDLRace", "cancel requested id=$id")
@@ -258,6 +247,10 @@ object YoutubeDL {
         }
     }
 
+    /**
+      Shell command function with the only purpose of finding and terminating
+      A yt-dlp process
+     */
     private fun destroyChildProcesses(pid: Int): Boolean {
         return try {
             val executionCommand = """
@@ -285,32 +278,43 @@ object YoutubeDL {
         }
     }
 
-    class CanceledException : Exception()
 
-    @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
-    fun execute(
-        request: YoutubeDLRequest,
-        processId: String? = null,
-        callback: ((Float, Long, String) -> Unit)? = null
-    ): YoutubeDLResponse {
-        return executeImpl(request, processId, false, callback)
+    /** This function is a convenience function around getInfo(request: YoutubeDLRequest): VideoInfo
+    Use this function for the default yt-dlp request
+     */
+    fun getInfo(url: String): VideoInfo = getCustomInfo(YoutubeDLRequest(url))
+
+    /**
+    Use this function directly if you have a custom request.
+
+     Note that error streaming is off by default, so turn it to true if you
+     want the error stream.
+     */
+    fun getCustomInfo(request: YoutubeDLRequest, redirectErrorStream: Boolean = false): VideoInfo {
+        request.addOption("--dump-json")
+        val response = execute(request = request, processId = null, redirectErrorStream = redirectErrorStream)
+        val videoInfo = try {
+            objectMapper.readValue(response.out, VideoInfo::class.java)
+        } catch (e: IOException) {
+            throw YoutubeDLException("Unable to parse video information", e)
+        } ?: throw YoutubeDLException("Failed to fetch video information")
+        return videoInfo
     }
 
 
-    @JvmOverloads
-    @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
+    class CanceledException : Exception()
+
     fun execute(
         request: YoutubeDLRequest,
         processId: String? = null,
         redirectErrorStream: Boolean = false,
         callback: ((Float, Long, String) -> Unit)? = null
     ): YoutubeDLResponse {
-        return executeImpl(request, processId, redirectErrorStream, callback)
+        return executeImplementation(request, processId, redirectErrorStream, callback)
     }
 
 
-    @Throws(YoutubeDLException::class, InterruptedException::class, CanceledException::class)
-    private fun executeImpl(
+    private fun executeImplementation(
         request: YoutubeDLRequest,
         processId: String? = null,
         redirectErrorStream: Boolean = false,
@@ -329,8 +333,8 @@ object YoutubeDL {
         }
 
 
-        // For curl_cffi and cffi, have something like "request.addOption("--impersonate", "chrome")"
-        // the chrome part is options, the library can have any browser as an option for TLS, tho chrome is recommended.
+        // To use curl_cffi and curl_impersonate!
+        request.addOption("--impersonate","chrome")
 
 
         // this sets aria2 as on by default
@@ -370,7 +374,6 @@ object YoutubeDL {
         echo ${'$'}${'$'} > "${pidFile.absolutePath}"
         exec "${'$'}@"
     """.trimIndent()
-
             command.addAll(
                 listOf(
                     "/system/bin/sh",

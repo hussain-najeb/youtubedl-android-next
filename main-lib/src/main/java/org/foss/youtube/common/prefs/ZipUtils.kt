@@ -1,4 +1,4 @@
-package org.foss.youtube.next
+package org.foss.youtube.common.prefs
 
 import android.system.Os
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
@@ -43,23 +43,4 @@ object ZipUtils {
             }
         }
     }
-
-    fun unzip(inputStream: InputStream?, targetDirectory: File) {
-        ZipArchiveInputStream(BufferedInputStream(inputStream)).use { zis ->
-            var entry: ZipArchiveEntry? = null
-            while (zis.nextZipEntry.also { entry = it } != null) {
-                val entryDestination = File(targetDirectory, entry!!.name)
-                // prevent zipSlip
-                if (!entryDestination.canonicalPath.startsWith(targetDirectory.canonicalPath + File.separator)) {
-                    throw IllegalAccessException("Entry is outside of the target dir: " + entry!!.name)
-                }
-                if (entry!!.isDirectory) {
-                    entryDestination.mkdirs()
-                } else {
-                    entryDestination.parentFile.mkdirs()
-                    FileOutputStream(entryDestination).use { out -> IOUtils.copy(zis, out) }
-                }
-            }
-        }
     }
-}

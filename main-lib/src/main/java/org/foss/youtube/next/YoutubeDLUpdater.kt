@@ -6,7 +6,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
-import org.foss.youtube.next.SharedPrefsHelper.update
+import org.foss.youtube.common.prefs.SharedPrefsHelper
+import org.foss.youtube.common.prefs.SharedPrefsHelper.update
 import org.foss.youtube.next.YoutubeDL.getInstance
 import java.io.File
 import java.io.IOException
