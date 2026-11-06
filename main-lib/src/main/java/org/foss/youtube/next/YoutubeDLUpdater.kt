@@ -1,5 +1,6 @@
 package org.foss.youtube.next
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -23,7 +24,7 @@ internal object YoutubeDLUpdater {
         youtubeDLChannel: YoutubeDL.UpdateChannel = YoutubeDL.UpdateChannel.Stable
     ): YoutubeDL.UpdateStatus {
         val json = checkForUpdate(appContext!!, youtubeDLChannel)
-            ?: return YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE
+            ?: return YoutubeDL.UpdateStatus.AlreadyUpToDate
         val downloadUrl = getDownloadUrl(json)
         val file = download(appContext, downloadUrl)
         val ytdlpDir = getYoutubeDLDir(
@@ -44,7 +45,7 @@ internal object YoutubeDLUpdater {
             file.delete()
         }
         updateSharedPrefs(appContext, getTag(json), getName(json))
-        return YoutubeDL.UpdateStatus.DONE
+        return YoutubeDL.UpdateStatus.Done
     }
 
     private fun updateSharedPrefs(appContext: Context, tag: String, name: String) {
@@ -52,7 +53,7 @@ internal object YoutubeDLUpdater {
         update(appContext, dlpVersionNameKey, name)
     }
 
-    @Throws(IOException::class)
+    @SuppressLint("SuspiciousIndentation")
     private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: YoutubeDL.UpdateChannel): JsonNode? =
         withContext(Dispatchers.IO) {
             val url = URL(youtubeDLChannel.apiUrl)
@@ -67,7 +68,6 @@ internal object YoutubeDLUpdater {
 
     private fun getName(json: JsonNode): String = json["name"].asText()
 
-    @Throws(YoutubeDLException::class)
     private suspend fun getDownloadUrl(json: JsonNode): String =
         withContext(Dispatchers.IO) {
             val assets = json["assets"] as? ArrayNode
@@ -83,7 +83,6 @@ internal object YoutubeDLUpdater {
         }
 
 
-    @Throws(IOException::class)
     private suspend fun download(appContext: Context, url: String): File =
         withContext(Dispatchers.IO) {
             val downloadUrl = URL(url)

@@ -6,6 +6,7 @@ import android.util.Log
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.foss.youtube.next.mapper.VideoInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -15,7 +16,7 @@ import org.foss.youtube.common.prefs.SharedPrefsHelper.update
 import org.foss.youtube.common.prefs.ZipUtils.unzip
 import java.io.File
 import java.io.IOException
-import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
 object YoutubeDL {
@@ -31,12 +32,17 @@ object YoutubeDL {
     private var ENV_ARIA2_OPENSSL_CONF: String? = null
     private var ENV_ARIA2_OPENSSL_MODULES: String? = null
     private var TMPDIR: String = ""
-    private val idProcessMap = Collections.synchronizedMap(HashMap<String, Process>())
-    private val idPidMap = Collections.synchronizedMap(HashMap<String, Int>())
-    private val cancellingProcessIds = Collections.synchronizedSet(HashSet<String>())
     private val updateMutex = Mutex()
     private val initMutex = Mutex()
 
+
+    private class ProcessEntry(
+        val process: Process,
+        @Volatile var pid: Int? = null,
+        @Volatile var cancelling: Boolean = false,
+    )
+
+    private val processes = ConcurrentHashMap<String, ProcessEntry>()
 
     suspend fun init(appContext: Context) = withContext(Dispatchers.IO) {
         initMutex.withLock {
@@ -198,19 +204,19 @@ object YoutubeDL {
     ): Boolean {
         val deadline = System.currentTimeMillis() + timeout
         while (System.currentTimeMillis() < deadline) {
-            if (!idProcessMap.containsKey(processId)) return true
+            if (!processes.containsKey(processId)) return true
             Thread.sleep(confirmation)
         }
-        return !idProcessMap.containsKey(processId)
+        return !processes.containsKey(processId)
     }
 
-    private fun lingeringProcessTermination(processId: String?, process: Process) {
-        val pid = processId?.let { idPidMap[it] }
+    private fun lingeringProcessTermination(entry: ProcessEntry) {
+        val pid = entry.pid
         if (pid != null) {
             destroyChildProcesses(pid)
             sendSignal(pid, 9)
         } else {
-            process.destroy()
+            entry.process.destroy()
         }
     }
 
@@ -225,19 +231,19 @@ object YoutubeDL {
 
 
     /**
-     For apps that use this library, this function is to be called to cancel the process.
-     Usually you would have an ID that reefers to the WorkManager ID that you would have.
+    For apps that use this library, this function is to be called to cancel the process.
+    Usually you would have an ID that reefers to the WorkManager ID that you would have.
 
 
-     Check the example app code of the library for the optimal integration.
+    Check the example app code of the library for the optimal integration.
      */
     fun destroyProcessById(id: String): Boolean {
-        val process = idProcessMap[id] ?: return false
+        val entry = processes[id] ?: return false
         Log.d("YoutubeDLRace", "cancel requested id=$id")
 
-        cancellingProcessIds.add(id)
+        entry.cancelling = true
         return try {
-            lingeringProcessTermination(id, process)
+            lingeringProcessTermination(entry)
             true
         } catch (e: Exception) {
             Log.e("YoutubeDLRace", "Failed to terminate process id=$id", e)
@@ -246,8 +252,8 @@ object YoutubeDL {
     }
 
     /**
-      Shell command function with the only purpose of finding and terminating
-      A yt-dlp process
+    Shell command function with the only purpose of finding and terminating
+    A yt-dlp process
      */
     private fun destroyChildProcesses(pid: Int): Boolean {
         return try {
@@ -280,33 +286,30 @@ object YoutubeDL {
     /** This function is a convenience function around getInfo(request: YoutubeDLRequest): VideoInfo
     Use this function for the default yt-dlp request
      */
-    fun getInfo(url: String): VideoInfo = getCustomInfo(YoutubeDLRequest(url))
+    suspend fun getInfo(url: String): VideoInfo = getCustomInfo(YoutubeDLRequest(url))
 
     /**
     Use this function directly if you have a custom request.
      */
-    fun getCustomInfo(request: YoutubeDLRequest): VideoInfo {
+    suspend fun getCustomInfo(request: YoutubeDLRequest): VideoInfo {
         request.addOption("--dump-json")
-        val response = execute(request = request, processId = null)
-        val videoInfo = try {
+        val response = execute(request)
+        return try {
             objectMapper.readValue(response.out, VideoInfo::class.java)
         } catch (e: IOException) {
-            throw YoutubeDLException("Unable to parse video information", e)
+            throw YoutubeDLException("Unable to parse video information: ${response.err}", e)
         } ?: throw YoutubeDLException("Failed to fetch video information")
-        return videoInfo
     }
 
 
     class CanceledException : Exception()
 
-    fun execute(
+    suspend fun execute(
         request: YoutubeDLRequest,
         processId: String? = null,
         redirectErrorStream: Boolean = false,
         callback: ((Float, Long, String) -> Unit)? = null
-    ): YoutubeDLResponse {
-        return executeImplementation(request, processId, redirectErrorStream, callback)
-    }
+    ): YoutubeDLResponse = runInterruptible(Dispatchers.IO) { executeImplementation(request, processId, redirectErrorStream, callback) }
 
 
     private fun executeImplementation(
@@ -316,26 +319,20 @@ object YoutubeDL {
         callback: ((Float, Long, String) -> Unit)? = null
     ): YoutubeDLResponse {
         assertInit()
-        if (processId != null && idProcessMap.containsKey(processId)) {
-            if (!waitForIdRelease(processId)) {
-                throw YoutubeDLException("Process ID already exists")
-            }
-        }
+        var entry: ProcessEntry? = null
 
+        if (processId != null && !waitForIdRelease(processId)) {
+            throw YoutubeDLException("Process ID already exists")
+        }
         // disable caching unless explicitly requested
         if (!request.hasOption("--cache-dir") || request.getOption("--cache-dir") == null) {
             request.addOption("--no-cache-dir")
         }
-
-
         // To use curl_cffi and curl_impersonate!
         request.addOption("--impersonate","chrome")
-
-
         // To use QuickJS-NG as the JS solver
         val quickJsCli = File(requireNotNull(binDir), "libqjs-cli.so")
         if (quickJsCli.exists()) request.addOption("--js-runtimes", "quickjs:${quickJsCli.absolutePath}")
-
 
         // this sets aria2 Next as on by default
         if (request.buildCommand().contains("libaria2c.so")) {
@@ -346,14 +343,12 @@ object YoutubeDL {
                     "aria2c:--ca-certificate=$ENV_SSL_CERT_FILE"
                 )
         }
-
         request.addOption("--ffmpeg-location", ffmpegPath!!.absolutePath)
         val process: Process
         val exitCode: Int
         val stdout = StringBuffer()
         val stderr = StringBuffer()
         val startTime = System.currentTimeMillis()
-
 
         val arguments = request.buildCommand().map { arg ->
             if (arg == "libaria2c.so") {
@@ -416,13 +411,15 @@ object YoutubeDL {
         }
 
         if (processId != null) {
-            idProcessMap[processId] = process
+            val newEntry = ProcessEntry(process)
+            if (processes.putIfAbsent(processId, newEntry) != null) {
+                process.destroy()
+                pidFile?.let { FileUtils.deleteQuietly(it) }
+                throw YoutubeDLException("Process ID already exists")
+            }
+            entry = newEntry
             Log.d("YoutubeDLRace", "registered id=$processId")
-
-            pidFile?.let {
-                readPidFile(it)?.let { pid ->
-                    idPidMap[processId] = pid
-                }
+            pidFile?.let { readPidFile(it)?.let { pid -> newEntry.pid = pid }
                 FileUtils.deleteQuietly(it)
             }
         }
@@ -438,7 +435,7 @@ object YoutubeDL {
                 stdErrProcessor.join()
                 process.waitFor()
             } catch (e: InterruptedException) {
-                lingeringProcessTermination(processId, process)
+                entry?.let { lingeringProcessTermination(it) } ?: process.destroy()
                 throw e
             }
 
@@ -446,30 +443,21 @@ object YoutubeDL {
             val err = stderr.toString()
 
             if (exitCode > 0) {
-                if (processId != null && (cancellingProcessIds.contains(processId) || !idProcessMap.containsKey(
-                        processId
-                    ))
-                ) {
-                    throw CanceledException()
-                }
-
-                if (!ignoreErrors(request, out)) {
-                    throw YoutubeDLException(err)
-                }
+                if (entry != null && entry.cancelling) throw CanceledException()
+                if (!ignoreErrors(request, out)) throw YoutubeDLException(err)
             }
             val elapsedTime = System.currentTimeMillis() - startTime
 
             val youtubeDLResponse = YoutubeDLResponse(command, exitCode, elapsedTime, out, err)
             return youtubeDLResponse
         } finally {
-            if (processId != null) {
-                idProcessMap.remove(processId)
-                idPidMap.remove(processId)
-                cancellingProcessIds.remove(processId)
-            }
+            if (processId != null && entry != null) processes.remove(processId, entry)
         }
     }
 
+    /**
+     * This is a suspend function with a mutex
+     */
     suspend fun updateYoutubeDL(
         appContext: Context,
         updateChannel: UpdateChannel = UpdateChannel.Nightly
@@ -484,21 +472,32 @@ object YoutubeDL {
         }
     }
 
-    fun version(appContext: Context?): String? {
+    /**
+     * This returns something like "2026.08.30.232658", just the version number of **yt-dlp**.
+     * For the stable version of **yt-dlp**, it’s a plain date like 2026.08.30.
+     */
+    fun versionNumber(appContext: Context?): String? {
         return YoutubeDLUpdater.version(appContext)
     }
 
+    /**
+     * This one returns the release title shown on GitHub. For **yt-dlp** that is usually the tag with a prefix,
+     * e.g. yt-dlp 2026.08.30, and for nightlies something like **yt-dlp** nightly 2026.08.30.232658
+     */
     fun versionName(appContext: Context?): String? {
         return YoutubeDLUpdater.versionName(appContext)
     }
 
 
+    /**
+     * Pick **"Done"** when updating has finished,
+     * **"AlreadyUpToDate"** when the update function doesn't find a new version
+     */
     enum class UpdateStatus {
-        DONE, ALREADY_UP_TO_DATE
+        Done, AlreadyUpToDate
     }
 
     private const val GITHUB = "https://api.github.com/repos"
-
     enum class UpdateChannel(val apiUrl: String) {
         Stable("$GITHUB/yt-dlp/yt-dlp/releases/latest"),
         Nightly("$GITHUB/yt-dlp/yt-dlp-nightly-builds/releases/latest"),
@@ -524,6 +523,5 @@ object YoutubeDL {
     private const val pythonLibVersion = "pythonLibVersion"
     val objectMapper = ObjectMapper()
 
-    @JvmStatic
     fun getInstance() = this
 }

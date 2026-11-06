@@ -81,17 +81,13 @@ class DownWorker(context: Context, param: WorkerParameters) : CoroutineWorker(co
                 video = video,
                 audio = audio,
                 callback = { progress, logs ->
-
-
                     if (metadata == null) {
                         val index = logs.indexOf(METADATA)
                         if (index >= 0) {
                             metadata = logs.substring(index + METADATA.length).trim()
                         }
                     }
-
                     val measuredProgress = progress.coerceIn(0f,100f)
-
 
                     runBlocking {
                         setProgress(
