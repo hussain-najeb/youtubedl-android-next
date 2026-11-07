@@ -19,7 +19,7 @@ class MainActivity: ComponentActivity() {
 
         enableEdgeToEdge()
         lifecycleScope.launch {
-            YoutubeDL.init(applicationContext)
+            YoutubeDL.initializeLib(applicationContext)
         }
 
         setContent {

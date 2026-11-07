@@ -1,10 +1,7 @@
 [versions]
 agp = "9.1.1"
 coil = "3.6.3"
-coilNetworkOkhttp = "3.6.3"
-coilVideo = "3.6.3"
 kotlin = "2.4.21"
-appcompat = "1.8.0"
 junit = "4.13.2"
 android-junit = "1.3.0"
 espresso = "3.7.0"
@@ -17,28 +14,18 @@ coroutines = "1.11.0"
 lifecycle = "2.11.0"
 activity-compose = "1.13.0"
 compose-bom = "2026.09.00"
-constraintlayout = "2.2.2"
-rxandroid = "2.1.1"
-exomedia = "5.2.0"
 appversion = "0.1.0"
 appversioncode = "1000"
-animated-vector-drawable = "28.0.0"
 work-runtime-ktx = "2.12.0"
-material = "1.14.0"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-ksp = { id = "com.google.devtools.ksp", version = "2.3.12" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [libraries]
-android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 coil = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
-coil-video = { module = "io.coil-kt.coil3:coil-video", version.ref = "coilVideo" }
-coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 junit = { module = "junit:junit", version.ref = "junit" }
 android-junit = { module = "androidx.test.ext:junit", version.ref = "android-junit" }
 espresso = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
@@ -59,9 +46,4 @@ compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview"
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
-rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroid" }
-exomedia = { module = "com.devbrackets.android:exomedia", version.ref = "exomedia" }
-animated-vector-drawable = { group = "com.android.support", name = "animated-vector-drawable", version.ref = "animated-vector-drawable" }
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work-runtime-ktx" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }

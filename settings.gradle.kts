@@ -6,15 +6,13 @@ pluginManagement {
     }
 }
 
-include(":example-app", ":main-lib")
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        // e.g this is how you would add jitpack
-        maven("https://jitpack.io")
-        // Add any repositories you would be adding to all projects here
     }
 }
+
+rootProject.name = "youtubedl-android-next"
+include(":example-app", ":main-lib")

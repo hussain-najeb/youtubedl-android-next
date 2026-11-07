@@ -11,11 +11,9 @@ import org.foss.youtube.next.YoutubeDLRequest
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-
 const val METADATA = "METADATA:"
 
-
-fun Download(
+suspend fun Download(
     context: Context,
     url: String,
     id: String,
@@ -40,14 +38,6 @@ fun Download(
     }
 
     video?.let { request.addOption("-f", it.videoQuality) }
-
-    // Uncomment this to get the Aria2 Next downloader instead of the default one
-
-//    val aria2Argument = "aria2c:--summary-interval=1 -x 12 -s 12 -k 1M"
-//        request.addOption("--downloader", "libaria2c.so")
-//        request.addOption(
-//            "--external-downloader-args", aria2Argument
-//        )
 
     request.addOption("-v")
     request.addOption("-i")

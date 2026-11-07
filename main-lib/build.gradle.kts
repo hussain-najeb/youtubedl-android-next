@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
+    `maven-publish`
     signing
-    id("maven-publish")
 }
 
 group = rootProject.group
@@ -14,6 +14,7 @@ android {
     defaultConfig {
         minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("proguard-rules.pro")
     }
 
     buildTypes {
@@ -35,7 +36,7 @@ android {
 
 publishing {
     publications {
-        create<org.gradle.api.publish.maven.MavenPublication>("release") {
+        register<MavenPublication>("release") {
             groupId = project.group.toString()
             artifactId = project.name
             version = project.version.toString()
@@ -73,12 +74,10 @@ publishing {
 
 signing {
     useGpgCmd()
-    sign(publishing.publications["release"])
+    sign(publishing.publications)
 }
 
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.android.junit)
     androidTestImplementation(libs.espresso)
@@ -86,7 +85,6 @@ dependencies {
     implementation(libs.jackson.annotations)
     implementation(libs.commons.io)
     implementation(libs.coroutines.core)
-    implementation(libs.appcompat)
     implementation(libs.core.ktx)
     implementation(libs.commons.compress)
 }

@@ -44,7 +44,11 @@ object YoutubeDL {
 
     private val processes = ConcurrentHashMap<String, ProcessEntry>()
 
-    suspend fun init(appContext: Context) = withContext(Dispatchers.IO) {
+    /**
+     * You must include this in you MainActivity with lifecycleScope
+     * to initialize the library with all of its binaries.
+     */
+    suspend fun initializeLib(appContext: Context) = withContext(Dispatchers.IO) {
         initMutex.withLock {
             if (initialized) return@withLock
             val baseDir = File(appContext.noBackupFilesDir, baseName)
@@ -69,8 +73,8 @@ object YoutubeDL {
             TMPDIR = appContext.cacheDir.absolutePath
             initFFmpeg(appContext, ffmpegDir)
             initPython(appContext, pythonDir)
-            initAria2c(appContext, aria2cDir)
-            init_ytdlp(appContext, ytdlpDir)
+            initAria2Next(appContext, aria2cDir)
+            initYtdlp(appContext, ytdlpDir)
             initialized = true
         }
     }
@@ -101,7 +105,7 @@ object YoutubeDL {
         update(appContext, ffmpegLibVersion, version)
     }
 
-    fun init_ytdlp(appContext: Context, ytdlpDir: File) {
+    fun initYtdlp(appContext: Context, ytdlpDir: File) {
         if (!ytdlpDir.exists()) ytdlpDir.mkdirs()
         val ytdlpBinary = File(ytdlpDir, ytdlpBin)
         if (!ytdlpBinary.exists()) {
@@ -135,7 +139,6 @@ object YoutubeDL {
             updatePython(appContext, pythonSize)
         }
 
-        // Avoid shadowing Android's system liblzma.so through LD_LIBRARY_PATH.
         FileUtils.deleteQuietly(
             File(pythonDir, "usr/lib/liblzma.so")
         )
@@ -149,7 +152,7 @@ object YoutubeDL {
         update(appContext, pythonLibVersion, version)
     }
 
-    fun initAria2c(appContext: Context, aria2cDir: File) {
+    fun initAria2Next(appContext: Context, aria2cDir: File) {
         val aria2cLib = File(binDir, aria2cLibName)
         val aria2cSize = aria2cLib.length().toString()
 

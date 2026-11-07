@@ -20,15 +20,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".StreamingExampleActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".DownloadingExampleActivity"
-            android:screenOrientation="portrait"></activity>
-        <activity
-            android:name=".CommandExampleActivity"
-            android:screenOrientation="portrait"></activity>
     </application>
 
 </manifest>

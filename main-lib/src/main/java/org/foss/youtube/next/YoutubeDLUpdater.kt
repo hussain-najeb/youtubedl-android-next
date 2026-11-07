@@ -39,7 +39,7 @@ internal object YoutubeDLUpdater {
         } catch (e: Exception) {
             /* if something went wrong restore default version */
             FileUtils.deleteQuietly(ytdlpDir)
-            getInstance().init_ytdlp(appContext, ytdlpDir)
+            getInstance().initYtdlp(appContext, ytdlpDir)
             throw YoutubeDLException(e)
         } finally {
             file.delete()
