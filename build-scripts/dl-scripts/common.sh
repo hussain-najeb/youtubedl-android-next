@@ -6,7 +6,7 @@ BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 : "${WORK_ROOT:=$BASE_DIR/build}"
 : "${TERMUX_PACKAGES_DIR:=$BASE_DIR/termux-packages}"
-: "${YTDLP_ANDROID_DIR:=$BASE_DIR/youtubedl-android-next}"
+: "${YTDLP_ANDROID_DIR:=$BASE_DIR/..}"
 : "${QUICKJS_DIR:=$WORK_ROOT/quickjs-ng-src}"
 : "${FFMPEG_MAKER_DIR:=$WORK_ROOT/ffmpeg-android-maker}"
 : "${CURL_IMPERSONATE_DIR:=$WORK_ROOT/curl-impersonate-src}"

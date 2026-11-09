@@ -15,3 +15,7 @@
 target
 /buildSrc/build
 .idea/
+/build-scripts/build/
+/build-scripts/out/
+/build-scripts/termux-packages/
+/build-scripts/android-ndk-r30/
