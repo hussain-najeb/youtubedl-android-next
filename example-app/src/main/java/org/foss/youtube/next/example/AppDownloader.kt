@@ -10,26 +10,27 @@ import org.foss.youtube.next.YoutubeDL
 import org.foss.youtube.next.YoutubeDLRequest
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.util.UUID
 
 const val METADATA = "METADATA:"
 
 suspend fun Download(
     context: Context,
     url: String,
-    id: String,
+    id: UUID,
     audio: Audio? = Audio.HIGH,
     video: Video? = Video.SD480,
     callback: (Float, String) -> Unit
 ) {
     val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
-    val downDir = File(baseDir, id).apply { mkdirs() }
+    val downDir = File(baseDir, id.toString()).apply { mkdirs() }
     val finalDir = "${downDir.absolutePath}/%(title)s.%(ext)s"
     val request = YoutubeDLRequest(url)
 
 
     request.addOption("--no-simulate")
-    request.addOption("--print", "before_dl:$METADATA%(.{id,title,thumbnail,ext,webpage_url})j")
     request.addOption("--progress")
+    request.addOption("--print", "info:$METADATA%(.{id,title,thumbnail,ext,webpage_url})j")
 
     audio?.let {
         request.addOption("-x")
@@ -44,10 +45,10 @@ suspend fun Download(
     request.addOption("--embed-metadata")
     request.addOption("-o", finalDir)
 
-
-    YoutubeDL.getInstance().execute(request, id, redirectErrorStream = true) { progress, _, string ->
-        Log.d("YoutubeDL", string)
-        callback(progress, string)
+    // Make "redirectErrorStream = true" false to have normal progress and thumbnail, only turn it to true for debugging.
+    YoutubeDL.getInstance().execute(request, id, redirectErrorStream = true) { progress, _, log ->
+        Log.d("YoutubeDL", log)
+        callback(progress, log)
     }
 }
 
@@ -61,7 +62,7 @@ class DownWorker(context: Context, param: WorkerParameters) : CoroutineWorker(co
         val audio = audioInfo?.let(Audio::valueOf)
         val video = videoInfo?.let(Video::valueOf)
         var metadata: String? = null
-        val id = id.toString()
+        val id = id
 
         return try {
             Download(

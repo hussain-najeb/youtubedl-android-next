@@ -4,6 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
 }
 
-group = "com.github.hussain-najeb"
+group = "io.github.hussain-najeb"
 version = libs.versions.appversion.get()
 

@@ -16,6 +16,7 @@ import org.foss.youtube.common.prefs.SharedPrefsHelper.update
 import org.foss.youtube.common.prefs.ZipUtils.unzip
 import java.io.File
 import java.io.IOException
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
@@ -42,7 +43,7 @@ object YoutubeDL {
         @Volatile var cancelling: Boolean = false,
     )
 
-    private val processes = ConcurrentHashMap<String, ProcessEntry>()
+    private val processes = ConcurrentHashMap<UUID, ProcessEntry>()
 
     /**
      * You must include this in you MainActivity with lifecycleScope
@@ -201,7 +202,7 @@ object YoutubeDL {
     }
 
     private fun waitForIdRelease(
-        processId: String,
+        processId: UUID,
         timeout: Long = 2000L,
         confirmation: Long = 50L
     ): Boolean {
@@ -240,7 +241,7 @@ object YoutubeDL {
 
     Check the example app code of the library for the optimal integration.
      */
-    fun destroyProcessById(id: String): Boolean {
+    fun destroyProcessById(id: UUID): Boolean {
         val entry = processes[id] ?: return false
         Log.d("YoutubeDLRace", "cancel requested id=$id")
 
@@ -309,7 +310,7 @@ object YoutubeDL {
 
     suspend fun execute(
         request: YoutubeDLRequest,
-        processId: String? = null,
+        processId: UUID? = null,
         redirectErrorStream: Boolean = false,
         callback: ((Float, Long, String) -> Unit)? = null
     ): YoutubeDLResponse = runInterruptible(Dispatchers.IO) { executeImplementation(request, processId, redirectErrorStream, callback) }
@@ -317,7 +318,7 @@ object YoutubeDL {
 
     private fun executeImplementation(
         request: YoutubeDLRequest,
-        processId: String? = null,
+        processId: UUID? = null,
         redirectErrorStream: Boolean = false,
         callback: ((Float, Long, String) -> Unit)? = null
     ): YoutubeDLResponse {
@@ -398,8 +399,7 @@ object YoutubeDL {
         processBuilder.environment().apply {
             this["LD_LIBRARY_PATH"] = ENV_LD_LIBRARY_PATH
             this["SSL_CERT_FILE"] = ENV_SSL_CERT_FILE
-            this["PATH"] =
-                System.getenv("PATH") + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
+            this["PATH"] = System.getenv("PATH") + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
             this["PYTHONHOME"] = ENV_PYTHONHOME
             this["OPENSSL_CONF"] = ENV_ARIA2_OPENSSL_CONF
             this["OPENSSL_MODULES"] = ENV_ARIA2_OPENSSL_MODULES
@@ -459,7 +459,10 @@ object YoutubeDL {
     }
 
     /**
-     * This is a suspend function with a mutex
+     * This is a suspend function with a mutex, it fetches new versions of **yt-dlp**
+     * then compares them to the exiting version, if there was
+     * a diversion, the function will replace the exiting version
+     * with the new **yt-dlp** version
      */
     suspend fun updateYoutubeDL(
         appContext: Context,

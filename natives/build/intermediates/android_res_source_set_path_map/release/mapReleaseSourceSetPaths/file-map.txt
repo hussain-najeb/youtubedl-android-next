@@ -1,0 +1,8 @@
+org.foss.youtube.next.natives-pngs-0 /home/Hussain/build-scripts/youtubedl-android-next/natives/build/generated/res/pngs/release
+org.foss.youtube.next.natives-updated_navigation_xml-1 /home/Hussain/build-scripts/youtubedl-android-next/natives/build/generated/updated_navigation_xml/release
+org.foss.youtube.next.natives-mergeReleaseResources-2 /home/Hussain/build-scripts/youtubedl-android-next/natives/build/intermediates/incremental/release/mergeReleaseResources/merged.dir
+org.foss.youtube.next.natives-mergeReleaseResources-3 /home/Hussain/build-scripts/youtubedl-android-next/natives/build/intermediates/incremental/release/mergeReleaseResources/stripped.dir
+org.foss.youtube.next.natives-release-4 /home/Hussain/build-scripts/youtubedl-android-next/natives/build/intermediates/merged_res/release/mergeReleaseResources
+org.foss.youtube.next.natives-release-5 /home/Hussain/build-scripts/youtubedl-android-next/natives/build/intermediates/packaged_res/release/packageReleaseResources
+org.foss.youtube.next.natives-main-6 /home/Hussain/build-scripts/youtubedl-android-next/natives/src/main/res
+org.foss.youtube.next.natives-release-7 /home/Hussain/build-scripts/youtubedl-android-next/natives/src/release/res

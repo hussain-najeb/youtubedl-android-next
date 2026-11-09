@@ -16,3 +16,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "youtubedl-android-next"
 include(":example-app", ":main-lib")
+
+include("natives")
+include("natives")

@@ -1,6 +1,8 @@
 package org.foss.youtube.next.example
 
+import android.content.ContentValues.TAG
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,7 +21,11 @@ class MainActivity: ComponentActivity() {
 
         enableEdgeToEdge()
         lifecycleScope.launch {
-            YoutubeDL.initializeLib(applicationContext)
+            try {
+                YoutubeDL.initializeLib(applicationContext)
+            } catch (e: Exception) {
+                Log.e(TAG, "failed to initialize youtubedl-android-next", e)
+            }
         }
 
         setContent {

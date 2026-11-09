@@ -183,7 +183,7 @@ class DownloadViewModel : ViewModel() {
 
     fun cancel(context: Context) {
         activeProcess?.let { id ->
-            YoutubeDL.destroyProcessById(id.toString())
+            YoutubeDL.destroyProcessById(id)
             WorkManager.getInstance(context).cancelWorkById(id)
         }
         job?.cancel()
@@ -195,7 +195,7 @@ class DownloadViewModel : ViewModel() {
         metadata = null
     }
 
-        fun errorHandle(e: Exception) {
+        private fun errorHandle(e: Exception) {
             Log.e("error viewmodel", "Fetch failed: ${e.javaClass.simpleName}", e)
             val raw = when (e) {
                 is TimeoutCancellationException -> "Timed out waiting for a response, check network connection"
@@ -205,7 +205,7 @@ class DownloadViewModel : ViewModel() {
         }
 
 
-    fun parser(json: String): DownMetadata? {
+    private fun parser(json: String): DownMetadata? {
         return try {
             val obj = JSONObject(json)
             fun optStringOrNull(key: String): String? {

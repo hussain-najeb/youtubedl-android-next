@@ -1,7 +1,10 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SourcesJar
+
 plugins {
     alias(libs.plugins.android.library)
-    `maven-publish`
-    signing
+    alias(libs.plugins.maven.publish)
 }
 
 group = rootProject.group
@@ -26,55 +29,51 @@ android {
             )
         }
     }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
-    }
 }
 
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            groupId = project.group.toString()
-            artifactId = project.name
-            version = project.version.toString()
-            afterEvaluate { from(components["release"]) }
-            pom {
-                name.set("youtubedl-android-next")
-                description.set("yt-dlp for Android")
-                url.set("https://github.com/hussain-najeb/youtubedl-android")
-                inceptionYear.set("2019")
-                licenses {
-                    license {
-                        name.set("GPL-3.0 license")
-                        url.set("https://www.gnu.org/licenses/gpl-3.0.en.html")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("hussain-najeb")
-                        name.set("Hussain Najeb")
-                    }
-                }
-                scm {
-                    connection.set("scm:git:https://github.com/hussain-najeb/youtubedl-android")
-                    url.set("https://github.com/hussain-najeb/youtubedl-android")
-                }
+mavenPublishing {
+    publishToMavenCentral(automaticRelease = false)
+    signAllPublications()
+
+    coordinates(
+        groupId = project.group.toString(),
+        artifactId = "youtubedl-android-next",
+        version = project.version.toString()
+    )
+
+    configure(
+        AndroidSingleVariantLibrary(
+            javadocJar = JavadocJar.Empty(),
+            sourcesJar = SourcesJar.Sources(),
+            variant = "release"
+        )
+    )
+
+    pom {
+        name.set("youtubedl-android-next")
+        description.set("yt-dlp for Android")
+        url.set("https://github.com/hussain-najeb/youtubedl-android-next")
+        inceptionYear.set("2019")
+        licenses {
+            license {
+                name.set("GPL-3.0 license")
+                url.set("https://www.gnu.org/licenses/gpl-3.0.en.html")
+                distribution.set("repo")
             }
         }
-    }
-    repositories {
-        maven {
-            url = rootProject.layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
+        developers {
+            developer {
+                id.set("hussain-najeb")
+                name.set("Hussain Najeb")
+                url.set("https://github.com/hussain-najeb")
+            }
+        }
+        scm {
+            url.set("https://github.com/hussain-najeb/youtubedl-android-next")
+            connection.set("scm:git:git://github.com/hussain-najeb/youtubedl-android-next.git")
+            developerConnection.set("scm:git:ssh://git@github.com/hussain-najeb/youtubedl-android-next.git")
         }
     }
-}
-
-signing {
-    useGpgCmd()
-    sign(publishing.publications)
 }
 
 dependencies {
