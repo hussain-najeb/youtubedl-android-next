@@ -83,7 +83,7 @@ Open your `gradle/libs.versions.toml`, then add these:
 - On Android 10 (API 29), set `android:requestLegacyExternalStorage="true"`.
 
 >[!NOTE]
->This library isn’t published on JitPack. It is distributed through GitHub Packages (Maven).
+>This library isn’t published on JitPack. It is distributed through Maven Central, for the least amount of friction.
 
 ### In your app code:
 
@@ -112,7 +112,7 @@ val request = YoutubeDLRequest(url)
 *The parameter "url" comes from the consumers of this library, check the example app for a better idea.*
 
 > [!NOTE]
-> The reason why this code uses `Environment.DIRECTORY_DOWNLOADS` is that on Android 10+ (API 29 or higher), due to Android's Scoped Storage changes, apps only have direct access to `Download/` and `Documents/`. This library uses the **Private Downloads** folder of the example app, but you can use the **MediaStore.Downloads** collection to manage downloads in the public downloads folder.
+> This code uses `Environment.DIRECTORY_DOWNLOADS` with `getExternalFilesDir()`, which is your app's own downloads folder. On Android 10+ (API 29 or higher), Scoped Storage limits direct access to public folders. This library uses the **Private Downloads** folder of the example app, but you can use the **MediaStore.Downloads** collection to manage downloads in the public downloads folder.
 
 
 - You can add as many **yt-dlp** options as you want, by simply using the `addOption` function:
@@ -163,7 +163,7 @@ Then this `result` can be used in any way you want, whether it's a `viewModel` o
 YoutubeDL.destroyProcessById(id)
 ```
 
-This "id" param comes from the `WorkManager` UUID; it is highly advised to inspect the [example app's](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/example-app/src/main/java/org/foss/youtube/next/example/DownloadViewModel.kt) code for a better picture.
+This "id" param comes from the `WorkManager` UUID, it is highly advised to inspect the [example app's](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/example-app/src/main/java/org/foss/youtube/next/example/DownloadViewModel.kt) code for a better picture.
 
 > [!NOTE]
 > You dont need `getInstance()` to cancel requests.

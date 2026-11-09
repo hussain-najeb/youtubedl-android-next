@@ -1,0 +1,45 @@
+diff --git a/packages/libxml2/build.sh b/packages/libxml2/build.sh
+index 8894da04..00000000 100644
+--- a/packages/libxml2/build.sh
++++ b/packages/libxml2/build.sh
+@@ -7,23 +7,21 @@
+ TERMUX_PKG_SRCURL="https://download.gnome.org/sources/libxml2/${TERMUX_PKG_VERSION%.*}/libxml2-${TERMUX_PKG_VERSION}.tar.xz"
+ TERMUX_PKG_SHA256=98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821
+ TERMUX_PKG_DEPENDS="libandroid-glob, libiconv, zlib"
+-TERMUX_PKG_BUILD_DEPENDS="doxygen, python, readline"
++TERMUX_PKG_BUILD_DEPENDS="readline"
+ TERMUX_PKG_BREAKS="libxml2-dev"
+ TERMUX_PKG_REPLACES="libxml2-dev"
+ TERMUX_PKG_AUTO_UPDATE=true
+-TERMUX_PKG_HOSTBUILD=true
+-TERMUX_PKG_SETUP_PYTHON=true
+ # disabled due to compiler warnings
+ #	-Dthread-alloc=enabled
+ #	-Dtls=enabled
+ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+-	-Ddocs=enabled
++	-Ddocs=disabled
+ 	-Dhttp=enabled
+ 	-Dlegacy=enabled
+ "
+ # Python bindings
+ TERMUX_PKG_EXTRA_CONFIGURE_ARGS+="
+-	-Dpython=enabled
++	-Dpython=disabled
+ "
+ # `xmllint` history support
+ TERMUX_PKG_EXTRA_CONFIGURE_ARGS+="
+@@ -35,13 +34,6 @@
+ share/doc/libxml2/xmlcatalog.html
+ share/doc/libxml2/xmllint.html
+ "
+-
+-termux_step_host_build() {
+-	if [[ "$TERMUX_ON_DEVICE_BUILD" == "false" ]]; then
+-		# We need doxygen, other packages are it's dependencies
+-		termux_download_ubuntu_packages doxygen libfmt10 libspdlog1.15 libxapian30
+-	fi
+-}
+ 
+ termux_step_configure() {
+ 	if [[ "$TERMUX_ON_DEVICE_BUILD" == "false" ]]; then

@@ -1,0 +1,45 @@
+diff --git a/scripts/build/toolchain/termux_setup_toolchain_30.sh b/scripts/build/toolchain/termux_setup_toolchain_30.sh
+index b2df6ffb..68f6efe5 100644
+--- a/scripts/build/toolchain/termux_setup_toolchain_30.sh
++++ b/scripts/build/toolchain/termux_setup_toolchain_30.sh
+@@ -128,23 +128,27 @@ termux_setup_toolchain_30() {
+ 		return
+ 	fi
+ 
+-	[ -d "$TERMUX_STANDALONE_TOOLCHAIN" ] || mkdir -p "$TERMUX_STANDALONE_TOOLCHAIN"
+-	[ -d "${TERMUX_STANDALONE_TOOLCHAIN}-upper" ] || mkdir -p "${TERMUX_STANDALONE_TOOLCHAIN}-upper"
+-	[ -d "${TERMUX_STANDALONE_TOOLCHAIN}-work" ] || mkdir -p "${TERMUX_STANDALONE_TOOLCHAIN}-work"
+-
+-
+-	if ! mountpoint -q "${TERMUX_STANDALONE_TOOLCHAIN}"; then
+-		fuse-overlayfs \
+-			"${TERMUX_STANDALONE_TOOLCHAIN}" \
+-			-o lowerdir="${NDK}/toolchains/llvm/prebuilt/linux-x86_64" \
+-			-o upperdir="${TERMUX_STANDALONE_TOOLCHAIN}-upper" \
+-			-o workdir="${TERMUX_STANDALONE_TOOLCHAIN}-work"
+-	fi
+-
+ 	if [ -f "${TERMUX_STANDALONE_TOOLCHAIN}/.termux-standalone-toolchain" ]; then
+ 		return
+ 	fi
+ 
++	if mountpoint -q "${TERMUX_STANDALONE_TOOLCHAIN}" 2>/dev/null; then
++		fusermount3 -u "${TERMUX_STANDALONE_TOOLCHAIN}" 2>/dev/null || \
++			sudo umount "${TERMUX_STANDALONE_TOOLCHAIN}" 2>/dev/null || true
++	fi
++
++	rm -rf \
++		"${TERMUX_STANDALONE_TOOLCHAIN}" \
++		"${TERMUX_STANDALONE_TOOLCHAIN}-upper" \
++		"${TERMUX_STANDALONE_TOOLCHAIN}-work"
++
++	mkdir -p "${TERMUX_STANDALONE_TOOLCHAIN}"
++
++	echo "Materializing NDK LLVM toolchain into ${TERMUX_STANDALONE_TOOLCHAIN}..."
++	cp -a \
++		"${NDK}/toolchains/llvm/prebuilt/linux-x86_64/." \
++		"${TERMUX_STANDALONE_TOOLCHAIN}/"
++
+ 	local _NDK_ARCHNAME=$TERMUX_ARCH
+ 	if [ "$TERMUX_ARCH" = "aarch64" ]; then
+ 		_NDK_ARCHNAME=arm64

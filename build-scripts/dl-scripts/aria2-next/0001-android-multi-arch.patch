@@ -1,0 +1,130 @@
+diff --git a/cmake/superbuild/Dependencies.cmake b/cmake/superbuild/Dependencies.cmake
+index a75f16ae0..f6f7a4ed9 100644
+--- a/cmake/superbuild/Dependencies.cmake
++++ b/cmake/superbuild/Dependencies.cmake
+@@ -111,7 +111,19 @@ if(APPLE)
+     set(ARIA2_OPENSSL_TARGET darwin64-x86_64-cc)
+   endif()
+ elseif(ANDROID)
+-  set(ARIA2_OPENSSL_TARGET android-arm64)
++  # Termux's toolchain has no stock NDK layout, so use generic Linux targets;
++  # CC and the flags are passed explicitly.
++  if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
++    set(ARIA2_OPENSSL_TARGET linux-aarch64)
++  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|armv7.*|armeabi.*)$")
++    set(ARIA2_OPENSSL_TARGET linux-armv4)
++  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i[3-6]86|x86)$")
++    set(ARIA2_OPENSSL_TARGET linux-x86)
++  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64)$")
++    set(ARIA2_OPENSSL_TARGET linux-x86_64)
++  else()
++    message(FATAL_ERROR "Unsupported Android processor: ${CMAKE_SYSTEM_PROCESSOR}")
++  endif()
+ elseif(WIN32)
+   if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+     set(ARIA2_OPENSSL_TARGET mingw-arm64)
+@@ -158,9 +170,14 @@ endif()
+ if(ANDROID)
+   list(APPEND ARIA2_OPENSSL_CONFIG_ARGS
+     -D__ANDROID_API__=${CMAKE_SYSTEM_VERSION})
++  set(ARIA2_ANDROID_NDK "${CMAKE_ANDROID_NDK}")
++  if(NOT ARIA2_ANDROID_NDK AND CMAKE_C_COMPILER)
++    get_filename_component(aria2_cc_dir "${CMAKE_C_COMPILER}" DIRECTORY)
++    get_filename_component(ARIA2_ANDROID_NDK "${aria2_cc_dir}" DIRECTORY)
++  endif()
+   list(APPEND ARIA2_OPENSSL_ENV
+-    ANDROID_NDK_HOME=${CMAKE_ANDROID_NDK}
+-    ANDROID_NDK_ROOT=${CMAKE_ANDROID_NDK})
++    ANDROID_NDK_HOME=${ARIA2_ANDROID_NDK}
++    ANDROID_NDK_ROOT=${ARIA2_ANDROID_NDK})
+ endif()
+ if(APPLE)
+   list(APPEND ARIA2_OPENSSL_ENV
+diff --git a/cmake/superbuild/Media.cmake b/cmake/superbuild/Media.cmake
+index 597ddaf54..7d0977ec3 100644
+--- a/cmake/superbuild/Media.cmake
++++ b/cmake/superbuild/Media.cmake
+@@ -7,11 +7,11 @@ set(media_environment ${CMAKE_COMMAND} -E env
+ set(media_tool_args)
+ set(media_cflags "${CMAKE_C_FLAGS}")
+ set(media_ldflags "${CMAKE_EXE_LINKER_FLAGS}")
+-if(CMAKE_C_COMPILER_TARGET)
++if(CMAKE_C_COMPILER_TARGET AND NOT ANDROID)
+   string(APPEND media_cflags " --target=${CMAKE_C_COMPILER_TARGET}")
+   string(APPEND media_ldflags " --target=${CMAKE_C_COMPILER_TARGET}")
+ endif()
+-if(CMAKE_SYSROOT)
++if(CMAKE_SYSROOT AND NOT ANDROID)
+   string(APPEND media_cflags " --sysroot=\"${CMAKE_SYSROOT}\"")
+   string(APPEND media_ldflags " --sysroot=\"${CMAKE_SYSROOT}\"")
+ endif()
+@@ -50,6 +50,10 @@ if(CMAKE_CROSSCOMPILING OR WIN32)
+     set(media_arch x86_64)
+   elseif(media_arch STREQUAL "arm64")
+     set(media_arch aarch64)
++  elseif(media_arch MATCHES "^i[3-6]86$")
++    set(media_arch x86)
++  elseif(media_arch MATCHES "^(armv[0-9].*|armeabi.*)$")
++    set(media_arch arm)
+   endif()
+   if(WIN32)
+     set(media_os mingw32)
+diff --git a/src/base/Process.cc b/src/base/Process.cc
+index 2401b6452..26523afaf 100644
+--- a/src/base/Process.cc
++++ b/src/base/Process.cc
+@@ -9,7 +9,9 @@
+ #  include <cerrno>
+ #  include <csignal>
+ #  include <fcntl.h>
+-#  include <spawn.h>
++#  if !defined(__ANDROID__) || __ANDROID_API__ >= 28
++#    include <spawn.h>
++#  endif
+ #  include <unistd.h>
+ extern char** environ;
+ #endif
+diff --git a/src/disk/File.cc b/src/disk/File.cc
+index a0ca46888..0dc619c86 100644
+--- a/src/disk/File.cc
++++ b/src/disk/File.cc
+@@ -342,7 +342,8 @@ std::error_code removeFile(const std::string& path)
+ 
+ void setModificationTime(const std::string& path, int64_t unixSeconds)
+ {
+-  const timespec times[2] = {{unixSeconds, 0}, {unixSeconds, 0}};
++  const timespec times[2] = {{static_cast<time_t>(unixSeconds), 0},
++                              {static_cast<time_t>(unixSeconds), 0}};
+   ::utimensat(AT_FDCWD, path.c_str(), times, 0);
+ }
+ 
+diff --git a/src/http/Request.cc b/src/http/Request.cc
+index 48f01658f..91fa3e9d8 100644
+--- a/src/http/Request.cc
++++ b/src/http/Request.cc
+@@ -1,5 +1,6 @@
+ /* Copyright (C) 2026 aria2-next contributors. GPL-2.0-or-later. */
+ // Request settings shared by every HTTP, HTTPS and SFTP transfer.
++#include <cstdlib>
+ #include "base/Error.h"
+ #include "base/Text.h"
+ #include "base/Uri.h"
+@@ -130,7 +131,17 @@ void configureRequest(CURL* easy, CURLSH* share, std::string& loadedCookies,
+        {std::pair{"ca-certificate", CURLOPT_CAINFO},
+         std::pair{"certificate", CURLOPT_SSLCERT},
+         std::pair{"private-key", CURLOPT_SSLKEY}}) {
+-    const auto value = options.get(name);
++    auto value = options.get(name);
++#ifdef __ANDROID__
++    // CURL_CA_BUNDLE is disabled at build time, so default to Termux's bundle.
++    if (value.empty() && option == CURLOPT_CAINFO) {
++      const char* prefix = std::getenv("PREFIX");
++      value = std::string(prefix && *prefix
++                              ? prefix
++                              : "/data/data/com.termux/files/usr") +
++              "/etc/tls/cert.pem";
++    }
++#endif
+     if (!value.empty()) {
+       set(option, value.c_str());
+     }
