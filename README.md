@@ -45,7 +45,6 @@
 > All of these versions will probably be changed as part of a monthly update cycle.
 
 # How To Use:
-- - -
 Generally, using this library shouldn't be difficult; you should do something like this:
 
 ### **Gradle**:
@@ -170,7 +169,6 @@ This "id" param comes from the `WorkManager` UUID, it is highly advised to inspe
 
 
 ## FFmpeg
-- - -
 **ffmpeg** in this project has all external libraries enabled using [ffmpeg-android-maker](https://github.com/Javernaut/ffmpeg-android-maker). The compilation process includes `-enable-all-free`, which means adding all these libraries to ffmpeg:
 
 | Library     | flag                   | alias               |
@@ -195,7 +193,6 @@ Also, you can easily swap containers (e.g., moving video into a `WebM` or `Ogg` 
 
 
 ## Aria2-Next
-- - -
 - You can use Aria2 Next as a different option from the default downloader with:
 ```kotlin
 val aria2Argument = "aria2c:--summary-interval=1 -x 12 -s 12 -k 1M"
@@ -216,7 +213,6 @@ To get more details on the project, [visit this page](https://github.com/AnInsom
 
 
 ## QuickJS-NG
-- - -
 In **youtubedl-android Next**, you don't have to use anything for **QuickJS-NG** to work, it works out-of-the-box.
 
 **QuickJS-NG** is an actively maintained fork of the [original QuickJS project](https://bellard.org/quickjs) by Fabrice Bellard and Charlie Gordon, it is a lightweight embeddable JavaScript engine. It aims to support the latest [ECMAScript](https://tc39.es/ecma262/) specification.
@@ -225,7 +221,6 @@ In **youtubedl-android Next**, you don't have to use anything for **QuickJS-NG**
 
 
 ## Curl-Impersonate
-- - -
 In **youtubedl-android Next**, you also don't have to do anything for TLS and impersonation to work, it works out-of-the-box with [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), an active fork that works with [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), all **cross-compiled** for every **Android ABI**, which makes it much easier to download videos from YouTube, TikTok, Instagram, and many, many more websites that weren't possible to download without major errors. This, inadvertently, makes **yt-dlp** much more reliable when making requests!
 
 And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-Impersonate) were **cross-compiled** to work on **all Android architectures**! `arm64-v8a`, `armeabi-v7a`, `x86`, and `x86_64`.
@@ -236,7 +231,6 @@ And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-I
 
 
 ## Documentation and Build Scripts
-- - -
 This library has three modules, two of which are linked: `natives` and `main-lib`. The third is `example-app` (the demo app, which isn't released). That doesn't change the fact that you only need one line to implement this library: Gradle will use `natives`, as it contains all the `.so` files that `main-lib` uses. The split only exists to make the library's update cycle easier.
 
 You do not need to inspect the build scripts to use the project. However, if you are interested in how the native components are built for the supported Android ABIs, refer to [Build Documentation](BUILD-ALL.md).

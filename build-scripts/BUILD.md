@@ -5,7 +5,6 @@ This document will teach you what the *build.tar.gz* does and how to build all t
 > [!important]
 
 ## Components
-- - -
 The build folder has all the components you need to use in this library, from *libcffi* to checking the stack on your own phone.
 
 The folder has a bunch of steps, all of which will be explained.
@@ -100,7 +99,6 @@ The script first identifies the device's architecture, then tests the **QuickJS*
 
 
 ## Supporting Files
-- - -
 Not everything in the folder is a numbered build stage. These files aren't stages themselves, but the numbered scripts rely on them.
 
 #### common.sh
@@ -148,7 +146,6 @@ And this runs stages 50 through 70 (**Python**, **ffmpeg** and **QuickJS**) for 
 This script applies the custom patches to the **Termux** packages repository. The patches themselves are listed in the `patches/termux/` section below.
 
 ## Folders
-- - -
 Besides the scripts, the folder has two subfolders.
 
 #### aria2-next/
@@ -176,7 +173,6 @@ This folder contains five modifications to the upstream **Termux** packages repo
 
 
 ## What The Final Application Receives
-- - -
 The purpose of this entire system is to produce these runtime components:
 
 | Output             | Purpose                                         |
