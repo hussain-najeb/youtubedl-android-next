@@ -233,6 +233,6 @@ And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-I
 ## Documentation and Build Scripts
 This library has three modules, two of which are linked: `natives` and `main-lib`. The third is `example-app` (the demo app, which isn't released). That doesn't change the fact that you only need one line to implement this library: Gradle will use `natives`, as it contains all the `.so` files that `main-lib` uses. The split only exists to make the library's update cycle easier.
 
-You do not need to inspect the build scripts to use the project. However, if you are interested in how the native components are built for the supported Android ABIs, refer to [Build Documentation](BUILD-ALL.md).
+You do not need to inspect the build scripts to use the project. However, if you are interested in how the native components are built for the supported Android ABIs, refer to [Build Documentation](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/build-scripts/BUILD.md).
 
 If you encounter an issue with any of the build scripts, please report it so that it can be investigated and corrected.
