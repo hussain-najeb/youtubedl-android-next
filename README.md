@@ -168,6 +168,23 @@ This "id" param comes from the `WorkManager` UUID, it is highly advised to inspe
 > You dont need `getInstance()` to cancel requests.
 
 
+> [!TIP]
+> The library ships all four ABIs (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`), so a single APK can get large. To build one APK per ABI, add this to your app's `build.gradle.kts`:
+> ```kotlin
+> android {
+>     splits {
+>         abi {
+>             isEnable = true
+>             reset()
+>             include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+>             isUniversalApk = false
+>         }
+>     }
+> }
+> ```
+*Set  `isUniversalApk = true` to true if you want an apk with all the native files in* 
+
+
 ## FFmpeg
 **ffmpeg** in this project has all external libraries enabled using [ffmpeg-android-maker](https://github.com/Javernaut/ffmpeg-android-maker). The compilation process includes `-enable-all-free`, which means adding all these libraries to ffmpeg:
 
