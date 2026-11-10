@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import org.foss.youtube.common.prefs.SharedPrefsHelper
 import org.foss.youtube.common.prefs.SharedPrefsHelper.update
-import org.foss.youtube.common.prefs.ZipUtils.unzip
+import org.foss.youtube.common.prefs.Unpack.unzip
 import java.io.File
 import java.io.IOException
 import java.util.UUID
@@ -399,7 +399,7 @@ object YoutubeDL {
         processBuilder.environment().apply {
             this["LD_LIBRARY_PATH"] = ENV_LD_LIBRARY_PATH
             this["SSL_CERT_FILE"] = ENV_SSL_CERT_FILE
-            this["PATH"] = System.getenv("PATH") + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
+            this["PATH"] = System.getenv("PATH").orEmpty() + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
             this["PYTHONHOME"] = ENV_PYTHONHOME
             this["OPENSSL_CONF"] = ENV_ARIA2_OPENSSL_CONF
             this["OPENSSL_MODULES"] = ENV_ARIA2_OPENSSL_MODULES

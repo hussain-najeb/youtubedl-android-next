@@ -9,7 +9,7 @@
 /.idea/gradle.xml
 /.idea/dictionaries
 .DS_Store
-/build
+build/
 /captures
 .externalNativeBuild
 target
@@ -19,3 +19,4 @@ target
 /build-scripts/out/
 /build-scripts/termux-packages/
 /build-scripts/android-ndk-r30/
+*.aar

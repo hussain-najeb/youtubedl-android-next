@@ -57,7 +57,7 @@ internal object YoutubeDLUpdater {
     private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: YoutubeDL.UpdateChannel): JsonNode? =
         withContext(Dispatchers.IO) {
             val url = URL(youtubeDLChannel.apiUrl)
-            val json = YoutubeDL.objectMapper.readTree(url)
+            val json: JsonNode = url.openStream().use { YoutubeDL.objectMapper.readTree(it) }
             val newVersion = getTag(json)
             val oldVersion = SharedPrefsHelper[appContext, dlpVersionKey]
                 return@withContext if (newVersion == oldVersion) null
