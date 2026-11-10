@@ -2,7 +2,6 @@ Welcome to the build documentation of **YoutubeDL-Android Next**!
 
 This document will teach you what the *build.tar.gz* does and how to build all the components this library has.
 
-> [!important]
 
 ## Components
 The build folder has all the components you need to use in this library, from *libcffi* to checking the stack on your own phone.
