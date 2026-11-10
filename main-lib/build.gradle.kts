@@ -77,6 +77,7 @@ mavenPublishing {
 }
 
 dependencies {
+    implementation(project(":natives"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.android.junit)
     androidTestImplementation(libs.espresso)

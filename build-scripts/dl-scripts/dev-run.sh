@@ -123,9 +123,8 @@ find "$OUT_DIR" -maxdepth 3 -type f \( -path "*/$ABI/*" -o -name "*-$ABI.so" -o 
 echo
 echo "--- module AAR entries for $ABI ---"
 for aar in \
-  "$YTDLP_ANDROID_DIR/library/build/outputs/aar/library-release.aar" \
-  "$YTDLP_ANDROID_DIR/ffmpeg/build/outputs/aar/ffmpeg-release.aar" \
-  "$YTDLP_ANDROID_DIR/aria2c/build/outputs/aar/aria2c-release.aar"; do
+  "$YTDLP_ANDROID_DIR/natives/build/outputs/aar/natives-release.aar" \
+  "$YTDLP_ANDROID_DIR/main-lib/build/outputs/aar/main-lib-release.aar"; do
   [ -f "$aar" ] || continue
   echo "== $aar =="
   unzip -l "$aar" | grep "jni/$ABI/" || true

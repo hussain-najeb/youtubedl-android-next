@@ -10,7 +10,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
-: "${MODULE:=main-lib}"          
+: "${MODULE:=natives}"          
 
 echo_config_once
 require_dir "$YTDLP_ANDROID_DIR" "set YTDLP_ANDROID_DIR to your youtubedl-android-next checkout"

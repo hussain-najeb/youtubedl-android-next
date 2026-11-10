@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
-: "${MODULE:=main-lib}"
+: "${MODULE:=natives}"
 JNI_ROOT="$YTDLP_ANDROID_DIR/$MODULE/src/main/jniLibs"
 
 require_cmd adb
