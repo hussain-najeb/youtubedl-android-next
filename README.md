@@ -49,17 +49,20 @@ Generally, using this library shouldn't be difficult; you should do something li
 
 ### **Gradle**:
 
-Open your `gradle/libs.versions.toml`, then add these:
+- Add the JitPack repository in your `settings.gradle.kts`:
+  ```Kotlin
+  maven("https://jitpack.io")
+  ```
 
-- Add this to your `[versions]` block:
+- Open your `gradle/libs.versions.toml`, then add this to your `[versions]` block:
   ```TOML
   [versions]
-  youtubedlNext = "0.1.0"
+  youtubedlNext = "v0.1.1"
   ```
 
 - Then, in your `[libraries]`, add:
   ```TOML
-  youtubedl-android-next = { group = "io.github.hussain-najeb", name = "youtubedl-android-next", version.ref = "youtubedlNext" }
+  youtubedl-android-next = { group = "com.github.hussain-najeb", name = "youtubedl-android-next", version.ref = "youtubedlNext" }
   ```
 
 - Then in your app's `app/build.gradle.kts`:
@@ -82,7 +85,7 @@ Open your `gradle/libs.versions.toml`, then add these:
 - On Android 10 (API 29), set `android:requestLegacyExternalStorage="true"`.
 
 >[!NOTE]
->This library isn’t published on JitPack. It is distributed through Maven Central, for the least amount of friction.
+>This library is distributed exclusively through **JitPack** (not published on Maven Central, as the native `.so` binaries are hosted via JitPack).
 
 ### In your app code:
 
