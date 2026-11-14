@@ -58,7 +58,7 @@ Generally, using this library shouldn't be difficult; you should do something li
 - Open your `gradle/libs.versions.toml`, then add this to your `[versions]` block:
   ```TOML
   [versions]
-  youtubedlNext = "v0.1.1"
+  youtubedlNext = "whatever version currently released, like v0.1.2"
   ```
 
 - Then, in your `[libraries]`, add:
