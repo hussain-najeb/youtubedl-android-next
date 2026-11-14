@@ -15,10 +15,13 @@ android {
          }
 }
 
-mavenPublishing {
-    publishToMavenCentral(automaticRelease = false)
-    signAllPublications()
+val onJitPack = System.getenv("JITPACK") == "true"
 
+mavenPublishing {
+    if (!onJitPack) {
+        publishToMavenCentral(automaticRelease = false)
+        signAllPublications()
+    }
     coordinates(
         groupId = "io.github.hussain-najeb",
         artifactId = "youtubedl-android-next-natives",
