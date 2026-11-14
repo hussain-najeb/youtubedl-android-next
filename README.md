@@ -88,9 +88,10 @@ Generally, using this library shouldn't be difficult; you should do something li
 > just add this line in your app's app/build.gradle.kts:
 > ```
 > debugImplementation(
-> "com.github.hussain-najeb.youtubedl-android-next:youtubedl-android-next-natives-x86_64:v0.1.2"
+> "com.github.hussain-najeb.youtubedl-android-next:youtubedl-android-next-natives-x86_64:v0.1.2" 
 > )
 > ```
+> That "v0.1.2" might be outdated, intellij will show a yellow line to tell you to update the library, please do!
 
 - Set `android:extractNativeLibs="true"` in your app's manifest.
 - On Android 10 (API 29), set `android:requestLegacyExternalStorage="true"`.
