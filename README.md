@@ -1,5 +1,4 @@
 ## YoutubeDL-Android Next
----
 > [!NOTE]
 > This is an active fork of the library [**youtubedl-android**](https://github.com/yausername/youtubedl-android), with the following enhancements:
 > 1. Updated every project dependency and build tooling used with its updated counterpart, like a newer version of **Kotlin**, **jackson**, and **gradle**.
@@ -20,7 +19,6 @@
 > *While that would make **Java**-based apps that use the old library have a much harder time using this project, it would be a much simpler task in terms of maintenance to have unification in the codebase, in a language that I personally have a much easier time writing with.*
 
 # What is YoutubeDL?
----
 
 **YoutubeDL** is a library that brings [**yt-dlp**](https://github.com/yt-dlp/yt-dlp) to **Android**. Usually, using the bare library on **Android** involved using a **[Termux](https://termux.dev/en/)** setup and doing a very finicky **Curl-Impersonate** setup that works without major work. With **YoutubeDL-Android Next**, this work has already been done to ensure the easiest way to use [**yt-dlp**](https://github.com/yt-dlp/yt-dlp) on **Android**, using an **updated stack**. The whole stack consists of:
 
@@ -247,7 +245,7 @@ And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-I
 
 
 > [!NOTE]
-> All of this can be inspected in the [build-scripts]("add Url here") with **Curl-Cffi** as well.
+> All of this can be inspected in the [build-scripts](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/build-scripts/BUILD.md) with **Curl-Cffi** as well.
 
 
 ## Documentation and Build Scripts
