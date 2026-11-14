@@ -42,6 +42,9 @@
 > [!NOTE]
 > All of these versions will probably be changed as part of a monthly update cycle.
 
+> [!TIP] 
+> You can use this library in-action right now using the **Downloader** feature in [**Fermux**](https://github.com/hussain-najeb/Fermux), which makes extensive use of the enhanced features of the library.
+
 # How To Use:
 Generally, using this library shouldn't be difficult; you should do something like this:
 
@@ -78,6 +81,16 @@ Generally, using this library shouldn't be difficult; you should do something li
       }
   }
   ```
+
+> [!Note]
+> If you want to use x86_64, use the debug module to test, the 86_64 is a separate module for better testing and it reduces the size of the lib by a good margin (105mb to be precise),
+> 
+> just add this line in your app's app/build.gradle.kts:
+> ```
+> debugImplementation(
+> "com.github.hussain-najeb.youtubedl-android-next:youtubedl-android-next-natives-x86_64:v0.1.2"
+> )
+> ```
 
 - Set `android:extractNativeLibs="true"` in your app's manifest.
 - On Android 10 (API 29), set `android:requestLegacyExternalStorage="true"`.
@@ -187,6 +200,7 @@ This "id" param comes from the `WorkManager` UUID, it is highly advised to inspe
 
 
 ## FFmpeg
+
 **ffmpeg** in this project has all external libraries enabled using [ffmpeg-android-maker](https://github.com/Javernaut/ffmpeg-android-maker). The compilation process includes `-enable-all-free`, which means adding all these libraries to ffmpeg:
 
 | Library     | flag                   | alias               |
@@ -211,6 +225,7 @@ Also, you can easily swap containers (e.g., moving video into a `WebM` or `Ogg` 
 
 
 ## Aria2-Next
+
 - You can use Aria2 Next as a different option from the default downloader with:
 ```kotlin
 val aria2Argument = "aria2c:--summary-interval=1 -x 12 -s 12 -k 1M"
@@ -231,6 +246,7 @@ To get more details on the project, [visit this page](https://github.com/AnInsom
 
 
 ## QuickJS-NG
+
 In **youtubedl-android Next**, you don't have to use anything for **QuickJS-NG** to work, it works out-of-the-box.
 
 **QuickJS-NG** is an actively maintained fork of the [original QuickJS project](https://bellard.org/quickjs) by Fabrice Bellard and Charlie Gordon, it is a lightweight embeddable JavaScript engine. It aims to support the latest [ECMAScript](https://tc39.es/ecma262/) specification.
@@ -239,6 +255,7 @@ In **youtubedl-android Next**, you don't have to use anything for **QuickJS-NG**
 
 
 ## Curl-Impersonate
+
 In **youtubedl-android Next**, you also don't have to do anything for TLS and impersonation to work, it works out-of-the-box with [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), an active fork that works with [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), all **cross-compiled** for **arm32, arm64, and x86_64**, which makes it much easier to download videos from YouTube, TikTok, Instagram, and many, many more websites that weren't possible to download without major errors. This, inadvertently, makes **yt-dlp** much more reliable when making requests!
 
 And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-Impersonate) were **cross-compiled** to work for **arm32, arm64, and x86_64** (`arm64-v8a`, `armeabi-v7a`, and `x86_64`).
@@ -249,6 +266,7 @@ And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-I
 
 
 ## Documentation and Build Scripts
+
 This library has three modules, two of which are linked: `natives` and `main-lib`. The third is `example-app` (the demo app, which isn't released). That doesn't change the fact that you only need one line to implement this library: Gradle will use `natives`, as it contains all the `.so` files that `main-lib` uses. The split only exists to make the library's update cycle easier.
 
 You do not need to inspect the build scripts to use the project. However, if you are interested in how the native components are built for the supported Android ABIs, refer to [Build Documentation](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/build-scripts/BUILD.md).
