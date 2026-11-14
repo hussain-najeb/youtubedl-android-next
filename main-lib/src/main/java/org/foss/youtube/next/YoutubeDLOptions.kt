@@ -51,13 +51,9 @@ class YoutubeDLOptions {
         return argument.ifEmpty { null }
     }
 
-    fun getArguments(option: String): List<String>? {
-        return if (!options.containsKey(option)) null else options[option]
-    }
+    fun getArguments(option: String): List<String>? = if (!options.containsKey(option)) null else options[option]
 
-    fun hasOption(option: String): Boolean {
-        return options.containsKey(option)
-    }
+    fun hasOption(option: String): Boolean = options.containsKey(option)
 
     fun buildOptions(): List<String> {
         val commandList: MutableList<String> = mutableListOf()

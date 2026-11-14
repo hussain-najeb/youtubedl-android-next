@@ -1,18 +1,5 @@
 #!/usr/bin/env bash
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
@@ -35,8 +22,6 @@ fetch_curl_impersonate_source() {
     || die "pinned curl-impersonate source lacks upstream Android threaded resolver configuration"
   grep -Fq -- 'armv7-linux-android' "$CURL_IMPERSONATE_DIR/.github/workflows/build.yml" \
     || die "pinned curl-impersonate source lacks the upstream Android armv7 build target"
-  grep -Fq -- 'x86-linux-android' "$CURL_IMPERSONATE_DIR/.github/workflows/build.yml" \
-    || die "pinned curl-impersonate source lacks the upstream Android x86 build target"
 }
 
 

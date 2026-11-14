@@ -7,8 +7,7 @@ import java.io.InputStreamReader
 import java.io.Reader
 import java.nio.charset.StandardCharsets
 
-internal class StreamGobbler(private val buffer: StringBuffer, private val stream: InputStream) :
-    Thread() {
+internal class StreamGobbler(private val buffer: StringBuffer, private val stream: InputStream) : Thread() {
     init {
         start()
     }

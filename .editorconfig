@@ -1,0 +1,7 @@
+root = true
+
+[*.{kt,kts}]
+ktlint_code_style = android_studio
+max_line_length = 120
+ktlint_standard_property-naming = disabled
+ktlint_standard_filename = disabled

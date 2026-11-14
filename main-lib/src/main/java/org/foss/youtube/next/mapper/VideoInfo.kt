@@ -75,7 +75,7 @@ class VideoInfo {
     val formats: ArrayList<VideoFormat>? = null
     val thumbnails: ArrayList<VideoThumbnail>? = null
 
-    //private ArrayList<VideoSubtitle> subtitles;
+    // private ArrayList<VideoSubtitle> subtitles;
     @JsonProperty("manifest_url")
     val manifestUrl: String? = null
     val url: String? = null
@@ -105,5 +105,4 @@ class VideoInfo {
 
     @JsonProperty("release_year")
     val releaseYear: Int? = null
-
 }

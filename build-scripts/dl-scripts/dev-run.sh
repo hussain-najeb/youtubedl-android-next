@@ -9,8 +9,8 @@ FROM_STAGE="${2:-00}"
 TO_STAGE="${3:-90}"
 
 case "$ABI" in
-  arm64-v8a|armeabi-v7a|x86|x86_64) ;;
-  *) die "invalid ABI '$ABI' (expected arm64-v8a, armeabi-v7a, x86, or x86_64)" ;;
+  arm64-v8a|armeabi-v7a|x86_64) ;;
+  *) die "invalid ABI '$ABI' (expected arm64-v8a, armeabi-v7a, or x86_64)" ;;
 esac
 
 [[ "$FROM_STAGE" =~ ^(00|10|20|30|40|50|60|70|80|90|95)$ ]] || die "invalid FROM stage: $FROM_STAGE"

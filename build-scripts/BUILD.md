@@ -47,7 +47,7 @@ The script downloads and checks out the pinned **curl_cffi** source, then modifi
 
 This is a big one, it builds and packages the actual Android Python runtime, as it is a **core runtime**
 
-The script itself builds **Termux Python 3.14.10** for all architectures then extracts **Python** and its required dependencies to install **CFFI**, **Curl-Cffi**, **Mutagen**, and **Certifi** and its CA certificates, the script also fixes Python native extensions to locate the correct shared libraries.
+The script itself builds **Termux Python 3.14.10** for arm32, arm64, and x86_64 then extracts **Python** and its required dependencies to install **CFFI**, **Curl-Cffi**, **Mutagen**, and **Certifi** and its CA certificates, the script also fixes Python native extensions to locate the correct shared libraries.
 
 The script also relocates **Termux-specific ELF** library paths because the **Python** runtime is built using **Termux**, but ultimately runs inside an **Android** application, not inside the **Termux** app. As well as packages the **Python** environment into a ZIP archive for convenience.
 
@@ -77,7 +77,7 @@ The pinned commit is for version `0.18.0` of the library, the output is predicta
 
 This script is for building **Aria2-Next**.
 
-What the script does is that it installs a custom **Termux** package recipe, since the package (**Aria2-Next**) doesn't exist in **termux-packages**. Then, it applies an android multi-architecture patch, since the upstream project doesn't have support for all **Android** ABI's, but only for one ABI, **Android ARM64**, so there were **cross-compilation** effort to bring it to all ABI's, then bundles the required C++ runtime, collects its shared libraries, collects CA certificates for HTTPS connections, creates a shell wrapper that configures `LD_LIBRARY_PATH` and `PREFIX`, which only means the shell wrapper makes `aria2-next` behave as though it is running inside a small, self-contained Termux environment, even though it is actually running inside an **Android** application, to then package everything into a ZIP runtime.
+What the script does is that it installs a custom **Termux** package recipe, since the package (**Aria2-Next**) doesn't exist in **termux-packages**. Then, it applies an android multi-architecture patch, since the upstream project doesn't have support for all **Android** ABI's, but only for one ABI, **Android ARM64**, so there were **cross-compilation** effort to bring it to arm32, arm64, and x86_64, then bundles the required C++ runtime, collects its shared libraries, collects CA certificates for HTTPS connections, creates a shell wrapper that configures `LD_LIBRARY_PATH` and `PREFIX`, which only means the shell wrapper makes `aria2-next` behave as though it is running inside a small, self-contained Termux environment, even though it is actually running inside an **Android** application, to then package everything into a ZIP runtime.
 
 
 The final runtime ZIP contains the executable, wrapper, libraries and TLS certificates.
@@ -151,7 +151,7 @@ Besides the scripts, the folder has two subfolders.
 
 This folder contains the custom **Termux** build recipe for **Aria2-Next**, which is what stage 80 installs, since the package doesn't exist in **termux-packages**.
 
-`build.sh` defines how **Termux** downloads, checks out, builds and installs **Aria2-Next**, while `0001-android-multi-arch.patch` adjusts the **OpenSSL** target selection so it works for the ARM, ARM64, x86 and x86_64 **Android** builds.
+`build.sh` defines how **Termux** downloads, checks out, builds and installs **Aria2-Next**, while `0001-android-multi-arch.patch` adjusts the **OpenSSL** target selection so it works for arm32, arm64, and x86_64 **Android** builds.
 
 
 #### patches/termux/

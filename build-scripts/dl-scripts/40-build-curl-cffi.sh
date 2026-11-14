@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
 
-
-
-
-
-
-
-
-
-
-
-
-
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
@@ -40,7 +28,6 @@ metadata = json.loads(Path(sys.argv[1]).read_text())
 required = {
     ("aarch64", 64, "aarch64"),
     ("x86_64", 64, "x86_64"),
-    ("i686", 32, "x86"),
     ("armv7l", 32, "armv7"),
 }
 found = {
@@ -364,10 +351,6 @@ build_curl_cffi_for_abi() {
       ;;
     armeabi-v7a)
       build_curl_cffi_termux_fallback "$abi" armv7l armv7
-      publish_curl_cffi_termux_pkg "$abi"
-      ;;
-    x86)
-      build_curl_cffi_termux_fallback "$abi" i686 x86
       publish_curl_cffi_termux_pkg "$abi"
       ;;
     *) die "unknown ABI: $abi" ;;

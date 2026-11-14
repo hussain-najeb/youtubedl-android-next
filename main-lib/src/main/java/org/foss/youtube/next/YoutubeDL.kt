@@ -4,7 +4,11 @@ import android.content.Context
 import android.os.Process.sendSignal
 import android.util.Log
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.foss.youtube.next.mapper.VideoInfo
+import java.io.File
+import java.io.IOException
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
@@ -14,11 +18,7 @@ import org.apache.commons.io.FileUtils
 import org.foss.youtube.common.prefs.SharedPrefsHelper
 import org.foss.youtube.common.prefs.SharedPrefsHelper.update
 import org.foss.youtube.common.prefs.Unpack.unzip
-import java.io.File
-import java.io.IOException
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.set
+import org.foss.youtube.next.mapper.VideoInfo
 
 object YoutubeDL {
     private var initialized = false
@@ -36,11 +36,10 @@ object YoutubeDL {
     private val updateMutex = Mutex()
     private val initMutex = Mutex()
 
-
     private class ProcessEntry(
         val process: Process,
         @Volatile var pid: Int? = null,
-        @Volatile var cancelling: Boolean = false,
+        @Volatile var cancelling: Boolean = false
     )
 
     private val processes = ConcurrentHashMap<UUID, ProcessEntry>()
@@ -64,9 +63,9 @@ object YoutubeDL {
             val ytdlpDir = File(baseDir, ytdlpDirName)
             ytdlpPath = File(ytdlpDir, ytdlpBin)
             ENV_LD_LIBRARY_PATH = pythonDir.absolutePath + "/usr/lib" + ":" +
-                 ffmpegDir.absolutePath + "/usr/lib" + ":" +
-                 aria2cDir.absolutePath + "/usr/lib" + ":" +
-                 binDir!!.absolutePath
+                ffmpegDir.absolutePath + "/usr/lib" + ":" +
+                aria2cDir.absolutePath + "/usr/lib" + ":" +
+                binDir!!.absolutePath
             ENV_SSL_CERT_FILE = pythonDir.absolutePath + "/usr/lib/python3.14/site-packages/certifi/cacert.pem"
             ENV_PYTHONHOME = pythonDir.absolutePath + "/usr"
             ENV_ARIA2_OPENSSL_CONF = File(aria2cDir, "usr/etc/tls/openssl.cnf").absolutePath
@@ -98,9 +97,8 @@ object YoutubeDL {
         }
     }
 
-    private fun shouldUpdateFFmpeg(appContext: Context, version: String): Boolean {
-        return version != SharedPrefsHelper[appContext, ffmpegLibVersion]
-    }
+    private fun shouldUpdateFFmpeg(appContext: Context, version: String): Boolean =
+        version != SharedPrefsHelper[appContext, ffmpegLibVersion]
 
     private fun updateFFmpeg(appContext: Context, version: String) {
         update(appContext, ffmpegLibVersion, version)
@@ -112,7 +110,8 @@ object YoutubeDL {
         if (!ytdlpBinary.exists()) {
             try {
                 val inputStream =
-                    appContext.resources.openRawResource(R.raw.ytdlp) /* will be renamed to yt-dlp */
+                    /* will be renamed to yt-dlp */
+                    appContext.resources.openRawResource(R.raw.ytdlp)
                 FileUtils.copyInputStreamToFile(inputStream, ytdlpBinary)
             } catch (e: Exception) {
                 FileUtils.deleteQuietly(ytdlpDir)
@@ -145,9 +144,8 @@ object YoutubeDL {
         )
     }
 
-    private fun shouldUpdatePython(appContext: Context, version: String): Boolean {
-        return version != SharedPrefsHelper[appContext, pythonLibVersion]
-    }
+    private fun shouldUpdatePython(appContext: Context, version: String): Boolean =
+        version != SharedPrefsHelper[appContext, pythonLibVersion]
 
     private fun updatePython(appContext: Context, version: String) {
         update(appContext, pythonLibVersion, version)
@@ -185,9 +183,8 @@ object YoutubeDL {
         }
     }
 
-    private fun shouldUpdateAria2c(appContext: Context, version: String): Boolean {
-        return version != SharedPrefsHelper[appContext, aria2cLibVersion]
-    }
+    private fun shouldUpdateAria2c(appContext: Context, version: String): Boolean =
+        version != SharedPrefsHelper[appContext, aria2cLibVersion]
 
     private fun updateAria2c(appContext: Context, version: String) {
         update(appContext, aria2cLibVersion, version)
@@ -197,15 +194,10 @@ object YoutubeDL {
         check(initialized) { "instance not initialized" }
     }
 
-    private fun ignoreErrors(request: YoutubeDLRequest, out: String): Boolean {
-        return request.hasOption("--dump-json") && out.isNotEmpty() && request.hasOption("--ignore-errors")
-    }
+    private fun ignoreErrors(request: YoutubeDLRequest, out: String): Boolean =
+        request.hasOption("--dump-json") && out.isNotEmpty() && request.hasOption("--ignore-errors")
 
-    private fun waitForIdRelease(
-        processId: UUID,
-        timeout: Long = 2000L,
-        confirmation: Long = 50L
-    ): Boolean {
+    private fun waitForIdRelease(processId: UUID, timeout: Long = 2000L, confirmation: Long = 50L): Boolean {
         val deadline = System.currentTimeMillis() + timeout
         while (System.currentTimeMillis() < deadline) {
             if (!processes.containsKey(processId)) return true
@@ -233,13 +225,11 @@ object YoutubeDL {
         return null
     }
 
-
     /**
-    For apps that use this library, this function is to be called to cancel the process.
-    Usually you would have an ID that reefers to the WorkManager ID that you would have.
+     For apps that use this library, this function is to be called to cancel the process.
+     Usually you would have an ID that reefers to the WorkManager ID that you would have.
 
-
-    Check the example app code of the library for the optimal integration.
+     Check the example app code of the library for the optimal integration.
      */
     fun destroyProcessById(id: UUID): Boolean {
         val entry = processes[id] ?: return false
@@ -256,12 +246,11 @@ object YoutubeDL {
     }
 
     /**
-    Shell command function with the only purpose of finding and terminating
-    A yt-dlp process
+     Shell command function with the only purpose of finding and terminating
+     A yt-dlp process
      */
-    private fun destroyChildProcesses(pid: Int): Boolean {
-        return try {
-            val executionCommand = """
+    private fun destroyChildProcesses(pid: Int): Boolean = try {
+        val executionCommand = """
             kill_descendants() {
                 for child in ${'$'}(cat "/proc/${'$'}1/task/${'$'}1/children" 2>/dev/null); do
                     kill_descendants "${'$'}child"
@@ -270,30 +259,28 @@ object YoutubeDL {
             }
             kill_descendants $pid
         """.trimIndent()
-            val terminator = ProcessBuilder(
-                "/system/bin/sh",
-                "-c",
-                executionCommand
-            ).start()
-            terminator.waitFor() == 0
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            Log.e("YoutubeDL", "Child termination interrupted", e)
-            false
-        } catch (e: Exception) {
-            Log.e("YoutubeDL", "Failed to terminate descendants of $pid", e)
-            false
-        }
+        val terminator = ProcessBuilder(
+            "/system/bin/sh",
+            "-c",
+            executionCommand
+        ).start()
+        terminator.waitFor() == 0
+    } catch (e: InterruptedException) {
+        Thread.currentThread().interrupt()
+        Log.e("YoutubeDL", "Child termination interrupted", e)
+        false
+    } catch (e: Exception) {
+        Log.e("YoutubeDL", "Failed to terminate descendants of $pid", e)
+        false
     }
 
-
     /** This function is a convenience function around getInfo(request: YoutubeDLRequest): VideoInfo
-    Use this function for the default yt-dlp request
+     Use this function for the default yt-dlp request
      */
     suspend fun getInfo(url: String): VideoInfo = getCustomInfo(YoutubeDLRequest(url))
 
     /**
-    Use this function directly if you have a custom request.
+     Use this function directly if you have a custom request.
      */
     suspend fun getCustomInfo(request: YoutubeDLRequest): VideoInfo {
         request.addOption("--dump-json")
@@ -305,7 +292,6 @@ object YoutubeDL {
         } ?: throw YoutubeDLException("Failed to fetch video information")
     }
 
-
     class CanceledException : Exception()
 
     suspend fun execute(
@@ -313,8 +299,9 @@ object YoutubeDL {
         processId: UUID? = null,
         redirectErrorStream: Boolean = false,
         callback: ((Float, Long, String) -> Unit)? = null
-    ): YoutubeDLResponse = runInterruptible(Dispatchers.IO) { executeImplementation(request, processId, redirectErrorStream, callback) }
-
+    ): YoutubeDLResponse = runInterruptible(Dispatchers.IO) {
+        executeImplementation(request, processId, redirectErrorStream, callback)
+    }
 
     private fun executeImplementation(
         request: YoutubeDLRequest,
@@ -333,7 +320,7 @@ object YoutubeDL {
             request.addOption("--no-cache-dir")
         }
         // To use curl_cffi and curl_impersonate!
-        request.addOption("--impersonate","chrome")
+        request.addOption("--impersonate", "chrome")
         // To use QuickJS-NG as the JS solver
         val quickJsCli = File(requireNotNull(binDir), "libqjs-cli.so")
         if (quickJsCli.exists()) request.addOption("--js-runtimes", "quickjs:${quickJsCli.absolutePath}")
@@ -372,7 +359,7 @@ object YoutubeDL {
             val shellCommand = """
         echo ${'$'}${'$'} > "${pidFile.absolutePath}"
         exec "${'$'}@"
-    """.trimIndent()
+            """.trimIndent()
             command.addAll(
                 listOf(
                     "/system/bin/sh",
@@ -399,7 +386,9 @@ object YoutubeDL {
         processBuilder.environment().apply {
             this["LD_LIBRARY_PATH"] = ENV_LD_LIBRARY_PATH
             this["SSL_CERT_FILE"] = ENV_SSL_CERT_FILE
-            this["PATH"] = System.getenv("PATH").orEmpty() + ":" + binDir!!.absolutePath + ":" + aria2cPath!!.parentFile!!.absolutePath
+            this["PATH"] =
+                System.getenv("PATH").orEmpty() + ":" + binDir!!.absolutePath + ":" +
+                aria2cPath!!.parentFile!!.absolutePath
             this["PYTHONHOME"] = ENV_PYTHONHOME
             this["OPENSSL_CONF"] = ENV_ARIA2_OPENSSL_CONF
             this["OPENSSL_MODULES"] = ENV_ARIA2_OPENSSL_MODULES
@@ -422,7 +411,8 @@ object YoutubeDL {
             }
             entry = newEntry
             Log.d("YoutubeDLRace", "registered id=$processId")
-            pidFile?.let { readPidFile(it)?.let { pid -> newEntry.pid = pid }
+            pidFile?.let {
+                readPidFile(it)?.let { pid -> newEntry.pid = pid }
                 FileUtils.deleteQuietly(it)
             }
         }
@@ -482,25 +472,21 @@ object YoutubeDL {
      * This returns something like "2026.08.30.232658", just the version number of **yt-dlp**.
      * For the stable version of **yt-dlp**, it’s a plain date like 2026.08.30.
      */
-    fun versionNumber(appContext: Context?): String? {
-        return YoutubeDLUpdater.version(appContext)
-    }
+    fun versionNumber(appContext: Context?): String? = YoutubeDLUpdater.version(appContext)
 
     /**
      * This one returns the release title shown on GitHub. For **yt-dlp** that is usually the tag with a prefix,
      * e.g. yt-dlp 2026.08.30, and for nightlies something like **yt-dlp** nightly 2026.08.30.232658
      */
-    fun versionName(appContext: Context?): String? {
-        return YoutubeDLUpdater.versionName(appContext)
-    }
-
+    fun versionName(appContext: Context?): String? = YoutubeDLUpdater.versionName(appContext)
 
     /**
      * Pick **"Done"** when updating has finished,
      * **"AlreadyUpToDate"** when the update function doesn't find a new version
      */
     enum class UpdateStatus {
-        Done, AlreadyUpToDate
+        Done,
+        AlreadyUpToDate
     }
 
     private const val GITHUB = "https://api.github.com/repos"
@@ -509,7 +495,6 @@ object YoutubeDL {
         Nightly("$GITHUB/yt-dlp/yt-dlp-nightly-builds/releases/latest"),
         Master("$GITHUB/yt-dlp/yt-dlp-master-builds/releases/latest")
     }
-
 
     const val baseName = "youtubedl-android"
     private const val packagesRoot = "packages"

@@ -32,13 +32,7 @@ sed -i "s/2.14.3/2.15.0/g" "$FFMPEG_MAKER_DIR/scripts/libfreetype/build.sh"
 require_file "$mbedtls_download_sh" "ffmpeg-android-maker mbedTLS download script"
 require_file "$mbedtls_build_sh" "ffmpeg-android-maker mbedTLS build script"
 
-# Patch 1: replace the maker's mbedTLS build step entirely.
-#  - FFmpeg 9.x links mbedTLS manually (not via the old mechanism used in 8.x), so https/version3
-#    are enabled here through EXTRA_BUILD_CONFIGURATION_FLAGS.
-#  - -Werror is stripped and -Wno-error=unterminated-string-initialization is set, because that
-#    warning inside mbedTLS's own sources otherwise fails the build.
-#  - ENABLE_TESTING=0 / ENABLE_PROGRAMS=0 skip mbedTLS's test and example programs, which are not
-#    needed and are one more thing that can fail to compile.
+# replace the thing with the thing, i forgot what this does, maybe relace the mbedtls with a different version?
 cat << 'MBED_EOF' > "$mbedtls_build_sh"
 #!/usr/bin/env bash
 CMAKE_BUILD_DIR=mbedtls_build_${ANDROID_ABI}

@@ -69,21 +69,29 @@ internal class StreamProcessExtractor(
 
     private fun getEta(line: String): Long {
         val matcher = p.matcher(line)
-        if (matcher.find()) return convertToSeconds(
-            matcher.group(GROUP_MINUTES),
-            matcher.group(GROUP_SECONDS)
-        ).also { eta = it.toLong() }.toLong() else {
-            val mAria2c = pAria2c.matcher(line)
-            if (mAria2c.find()) return convertToSeconds(
-                mAria2c.group(3),
-                mAria2c.group(5)
+        if (matcher.find()) {
+            return convertToSeconds(
+                matcher.group(GROUP_MINUTES),
+                matcher.group(GROUP_SECONDS)
             ).also { eta = it.toLong() }.toLong()
+        } else {
+            val mAria2c = pAria2c.matcher(line)
+            if (mAria2c.find()) {
+                return convertToSeconds(
+                    mAria2c.group(3),
+                    mAria2c.group(5)
+                ).also { eta = it.toLong() }.toLong()
+            }
         }
         return eta
     }
 
     private fun convertToSeconds(minutes: String?, seconds: String?): Int {
-        if (seconds == null) return 0 else if (minutes == null) return seconds.toInt()
+        if (seconds == null) {
+            return 0
+        } else if (minutes == null) {
+            return seconds.toInt()
+        }
         return minutes.toInt() * 60 + seconds.toInt()
     }
 

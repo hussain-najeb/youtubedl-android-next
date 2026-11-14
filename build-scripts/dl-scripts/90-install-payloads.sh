@@ -28,7 +28,6 @@ ndk_libcxx_for_abi() {
   case "$abi" in
     arm64-v8a)   triple="aarch64-linux-android" ;;
     armeabi-v7a) triple="arm-linux-androideabi" ;;
-    x86)         triple="i686-linux-android" ;;
     x86_64)      triple="x86_64-linux-android" ;;
     *) die "unsupported ABI for libc++ runtime: $abi" ;;
   esac

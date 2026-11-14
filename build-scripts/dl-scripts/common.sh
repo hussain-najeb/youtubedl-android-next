@@ -42,7 +42,7 @@ unset _fermux_java_bin
 
 export CIBW_BUILD="${CIBW_BUILD:-cp314-*}"
 
-: "${ABIS:=arm64-v8a armeabi-v7a x86 x86_64}"
+: "${ABIS:=arm64-v8a armeabi-v7a x86_64}"
 
 : "${TERMUX_PACKAGES_COMMIT:=d08cf6a8e256be9c9fc019430f6af5833d726980}"
 : "${CURL_IMPERSONATE_COMMIT:=5b1c3542fc7fc0e9fe623a6c9a848d16f92fe99a}"
@@ -105,7 +105,6 @@ abi_termux_arch() {
   case "$1" in
     arm64-v8a)   echo "aarch64" ;;
     armeabi-v7a) echo "arm" ;;
-    x86)         echo "i686" ;;
     x86_64)      echo "x86_64" ;;
     *) die "unknown ABI: $1" ;;
   esac
@@ -115,7 +114,7 @@ abi_cibw_arch() {
   case "$1" in
     arm64-v8a) echo "arm64_v8a" ;;
     x86_64)    echo "x86_64" ;;
-    armeabi-v7a|x86) echo "" ;;
+    armeabi-v7a) echo "" ;;
     *) die "unknown ABI: $1" ;;
   esac
 }
@@ -124,7 +123,6 @@ abi_ndk_triple() {
   case "$1" in
     arm64-v8a)   echo "aarch64-linux-android" ;;
     armeabi-v7a) echo "armv7a-linux-androideabi" ;;
-    x86)         echo "i686-linux-android" ;;
     x86_64)      echo "x86_64-linux-android" ;;
     *) die "unknown ABI: $1" ;;
   esac

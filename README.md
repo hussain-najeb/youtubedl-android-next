@@ -169,14 +169,14 @@ This "id" param comes from the `WorkManager` UUID, it is highly advised to inspe
 
 
 > [!TIP]
-> The library ships all four ABIs (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`), so a single APK can get large. To build one APK per ABI, add this to your app's `build.gradle.kts`:
+> The library ships `arm64-v8a`, `armeabi-v7a`, and `x86_64`, so a single APK can get large. To build one APK per ABI, add this to your app's `build.gradle.kts`:
 > ```kotlin
 > android {
 >     splits {
 >         abi {
 >             isEnable = true
 >             reset()
->             include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+>             include("arm64-v8a", "armeabi-v7a", "x86_64")
 >             isUniversalApk = false
 >         }
 >     }
@@ -238,9 +238,9 @@ In **youtubedl-android Next**, you don't have to use anything for **QuickJS-NG**
 
 
 ## Curl-Impersonate
-In **youtubedl-android Next**, you also don't have to do anything for TLS and impersonation to work, it works out-of-the-box with [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), an active fork that works with [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), all **cross-compiled** for every **Android ABI**, which makes it much easier to download videos from YouTube, TikTok, Instagram, and many, many more websites that weren't possible to download without major errors. This, inadvertently, makes **yt-dlp** much more reliable when making requests!
+In **youtubedl-android Next**, you also don't have to do anything for TLS and impersonation to work, it works out-of-the-box with [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), an active fork that works with [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), all **cross-compiled** for **arm32, arm64, and x86_64**, which makes it much easier to download videos from YouTube, TikTok, Instagram, and many, many more websites that weren't possible to download without major errors. This, inadvertently, makes **yt-dlp** much more reliable when making requests!
 
-And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-Impersonate) were **cross-compiled** to work on **all Android architectures**! `arm64-v8a`, `armeabi-v7a`, `x86`, and `x86_64`.
+And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-Impersonate) were **cross-compiled** to work for **arm32, arm64, and x86_64** (`arm64-v8a`, `armeabi-v7a`, and `x86_64`).
 
 
 > [!NOTE]

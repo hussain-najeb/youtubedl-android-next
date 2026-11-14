@@ -33,17 +33,11 @@ class YoutubeDLRequest {
         return this
     }
 
-    fun getOption(option: String): String? {
-        return options.getArgument(option)
-    }
+    fun getOption(option: String): String? = options.getArgument(option)
 
-    fun getArguments(option: String): List<String?>? {
-        return options.getArguments(option)
-    }
+    fun getArguments(option: String): List<String?>? = options.getArguments(option)
 
-    fun hasOption(option: String): Boolean {
-        return options.hasOption(option)
-    }
+    fun hasOption(option: String): Boolean = options.hasOption(option)
 
     fun buildCommand(): List<String> {
         val commandList: MutableList<String> = ArrayList()
