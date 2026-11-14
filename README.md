@@ -24,7 +24,7 @@
 
 | Library           |             Version |
 | ----------------- | ------------------: |
-| yt-dlp            |          2026.10.26 |
+| yt-dlp nightly    |   2026.11.04.232659 |
 | QuickJS-NG        |             v0.18.0 |
 | Aria2-Next        |             v3.0.10 |
 | FFmpeg            |              v9.0.2 |
