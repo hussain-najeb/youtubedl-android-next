@@ -294,6 +294,10 @@ object YoutubeDL {
 
     class CanceledException : Exception()
 
+    /**
+     * Call this function to start any download, although, don't switch `redirectErrorStream` to `true` unless you want to debug,
+     * since it corrupts JSON!
+    */
     suspend fun execute(
         request: YoutubeDLRequest,
         processId: UUID? = null,
