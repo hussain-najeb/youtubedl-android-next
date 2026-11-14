@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 : "${MODULE:=natives}"
-JNI_ROOT="$YTDLP_ANDROID_DIR/$MODULE/src/main/jniLibs"
+: "${MODULE_X86_64:=natives-x86_64}"
 
 require_cmd adb
 adb get-state >/dev/null 2>&1 || die "no adb device/emulator attached"
@@ -16,6 +16,12 @@ case " $ABIS " in
   *" $DEVICE_ABI "*) ;;
   *) die "device ABI $DEVICE_ABI is not in ABIS=\"$ABIS\" — nothing built for it" ;;
 esac
+
+if [ "$DEVICE_ABI" = "x86_64" ]; then
+  JNI_ROOT="$YTDLP_ANDROID_DIR/$MODULE_X86_64/src/main/jniLibs"
+else
+  JNI_ROOT="$YTDLP_ANDROID_DIR/$MODULE/src/main/jniLibs"
+fi
 
 TMP=/data/local/tmp
 

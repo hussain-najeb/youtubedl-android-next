@@ -10,18 +10,33 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
-: "${MODULE:=natives}"          
+: "${MODULE:=natives}"
+: "${MODULE_X86_64:=natives-x86_64}"
 
 echo_config_once
 require_dir "$YTDLP_ANDROID_DIR" "set YTDLP_ANDROID_DIR to your youtubedl-android-next checkout"
 require_dir "$YTDLP_ANDROID_DIR/$MODULE" "Gradle module '$MODULE' not found in the checkout"
 require_file "$YTDLP_ANDROID_DIR/$MODULE/build.gradle.kts" "'$MODULE' must be a real Gradle module"
+require_dir "$YTDLP_ANDROID_DIR/$MODULE_X86_64" "Gradle module '$MODULE_X86_64' not found in the checkout"
+require_file "$YTDLP_ANDROID_DIR/$MODULE_X86_64/build.gradle.kts" "'$MODULE_X86_64' must be a real Gradle module"
 require_cmd zip
 require_cmd unzip
 require_cmd patchelf
 
 FULL_VER="$(python_full_version)"
-JNI_ROOT="$YTDLP_ANDROID_DIR/$MODULE/src/main/jniLibs"
+
+module_for_abi() {
+  case "$1" in
+    x86_64) echo "$MODULE_X86_64" ;;
+    *)      echo "$MODULE" ;;
+  esac
+}
+
+jni_root_for_abi() {
+  local mod
+  mod="$(module_for_abi "$1")"
+  echo "$YTDLP_ANDROID_DIR/$mod/src/main/jniLibs"
+}
 
 ndk_libcxx_for_abi() {
   local abi="$1" triple
@@ -43,7 +58,8 @@ remove_if_present() {
 }
 
 clean_stale_for_abi() {
-  local abi="$1" dest="$JNI_ROOT/$abi" name
+  local abi="$1" dest name
+  dest="$(jni_root_for_abi "$abi")/$abi"
   mkdir -p "$dest"
   
   for name in \
@@ -55,7 +71,8 @@ clean_stale_for_abi() {
 }
 
 install_python_quickjs() {
-  local abi="$1" dest="$JNI_ROOT/$abi"
+  local abi="$1" dest
+  dest="$(jni_root_for_abi "$abi")/$abi"
   log "Installing Python/QuickJS payloads for $abi -> $dest"
 
   require_file "$OUT_DIR/python/$abi/libpython-${FULL_VER}-${abi}.so" "Python launcher for $abi"
@@ -70,7 +87,8 @@ install_python_quickjs() {
 }
 
 install_ffmpeg() {
-  local abi="$1" dest="$JNI_ROOT/$abi"
+  local abi="$1" dest
+  dest="$(jni_root_for_abi "$abi")/$abi"
   log "Installing FFmpeg payloads for $abi -> $dest"
 
   require_file "$OUT_DIR/ffmpeg/$abi/libffmpeg.so" "FFmpeg executable for $abi"
@@ -100,7 +118,8 @@ install_ffmpeg() {
 }
 
 install_aria2() {
-  local abi="$1" dest="$JNI_ROOT/$abi"
+  local abi="$1" dest
+  dest="$(jni_root_for_abi "$abi")/$abi"
   local bundle="$OUT_DIR/aria2/${abi}/libaria2-${abi}.zip.so"
   log "Installing aria2c payloads for $abi -> $dest"
 
@@ -128,32 +147,32 @@ install_for_abi() {
 
 for_each_abi install_for_abi
 
-log "Rebuilding :$MODULE AAR"
-(cd "$YTDLP_ANDROID_DIR" && ./gradlew ":$MODULE:clean" && ./gradlew ":$MODULE:assembleRelease")
+log "Rebuilding :$MODULE and :$MODULE_X86_64 AARs"
+(cd "$YTDLP_ANDROID_DIR" && ./gradlew ":$MODULE:clean" ":$MODULE_X86_64:clean" && ./gradlew ":$MODULE:assembleRelease" ":$MODULE_X86_64:assembleRelease")
 
-AAR="$(find "$YTDLP_ANDROID_DIR/$MODULE/build/outputs/aar" -maxdepth 1 -name '*release*.aar' 2>/dev/null | head -1)"
-[ -n "$AAR" ] || die "no release AAR found under $YTDLP_ANDROID_DIR/$MODULE/build/outputs/aar"
-require_file "$AAR" "expected AAR output"
-unzip -t "$AAR" >/dev/null
-
-log "AAR payload validation: $AAR"
 for abi in $ABIS; do
-  echo "===== $abi ====="
+  mod="$(module_for_abi "$abi")"
+  AAR="$(find "$YTDLP_ANDROID_DIR/$mod/build/outputs/aar" -maxdepth 1 -name '*release*.aar' 2>/dev/null | head -1)"
+  [ -n "$AAR" ] || die "no release AAR found under $YTDLP_ANDROID_DIR/$mod/build/outputs/aar"
+  require_file "$AAR" "expected AAR output"
+  unzip -t "$AAR" >/dev/null
+
+  echo "===== $abi ($mod: $AAR) ====="
 
   for name in \
     libpython.so libpython.zip.so libqjs.so libqjs-cli.so \
     libffmpeg.so libffprobe.so libffmpeg.zip.so \
     libaria2c.so libaria2.zip.so; do
     unzip -Z1 "$AAR" | grep -x "jni/$abi/$name" >/dev/null \
-      || die "missing jni/$abi/$name from $MODULE AAR"
+      || die "missing jni/$abi/$name from $mod AAR"
   done
 
-  
   if unzip -Z1 "$AAR" | grep -Eq "^jni/$abi/(libav(codec|device|filter|format|util)|libsw(resample|scale)|libc\+\+_shared)\.so$"; then
-    die "loose FFmpeg/libc++ dependency leaked into $MODULE AAR for $abi"
+    die "loose FFmpeg/libc++ dependency leaked into $mod AAR for $abi"
   fi
 done
 
+AAR="$(find "$YTDLP_ANDROID_DIR/$MODULE/build/outputs/aar" -maxdepth 1 -name '*release*.aar' 2>/dev/null | head -1)"
 log "AAR ready: $AAR"
 
 

@@ -51,6 +51,7 @@ android {
 
 dependencies {
     implementation(project(":main-lib"))
+    debugImplementation(project(":natives-x86_64"))
     implementation(platform(libs.compose.bom))
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime.ktx)
