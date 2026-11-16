@@ -52,7 +52,7 @@ jobs:
               uses: gradle/actions/setup-gradle@v5
 
             - name: Build
-              run: ./gradlew build
+              run: ./gradlew build -Dorg.gradle.jvmargs=-Xmx4g --stacktrace
               timeout-minutes: 20
 
 
