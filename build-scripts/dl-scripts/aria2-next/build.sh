@@ -1,3 +1,4 @@
+# shellcheck shell=bash disable=SC2034
 TERMUX_PKG_HOMEPAGE=https://github.com/AnInsomniacy/aria2-next
 TERMUX_PKG_DESCRIPTION="Maintained fork of the aria2 download utility"
 TERMUX_PKG_LICENSE="GPL-2.0"

@@ -2,6 +2,7 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
 : "${MODULE:=natives}"
@@ -37,6 +38,7 @@ log "--- FFmpeg / ffprobe ---"
 
 for so in "$OUT_DIR/ffmpeg/$DEVICE_ABI"/*.so; do
   [ -f "$so" ] || continue
+  case "$so" in *.zip.so) continue ;; esac
   push "$so" "$(basename "$so")"
 done
 

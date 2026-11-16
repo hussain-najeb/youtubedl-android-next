@@ -2,6 +2,7 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
 echo_config_once
@@ -129,6 +130,7 @@ PROVENANCE_FILE="$OUT_DIR/build-provenance.env"
   printf 'CURL_CFFI_COMMIT=%s\n' "$CURL_CFFI_COMMIT"
   printf 'QUICKJS_NG_COMMIT=%s\n' "$QUICKJS_NG_COMMIT"
   printf 'FFMPEG_MAKER_COMMIT=%s\n' "$FFMPEG_MAKER_COMMIT"
+  printf 'FFMPEG_VERSION=%s\n' "$FFMPEG_VERSION"
   printf 'ARIA2_NEXT_COMMIT=%s\n' "$ARIA2_NEXT_COMMIT"
   printf 'TERMUX_PYTHON_VERSION=%s\n' "$(python_full_version)"
   printf 'TERMUX_BUILDER_IMAGE_NAME=%s\n' "$TERMUX_BUILDER_IMAGE_NAME"

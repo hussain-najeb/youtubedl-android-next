@@ -18,6 +18,7 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
 echo_config_once
@@ -59,19 +60,22 @@ build_quickjs_for_abi() {
   require_file "$libqjs_so" "libqjs.so for $abi"
 
   
+  # shellcheck disable=SC2016
   patchelf --set-rpath '$ORIGIN' "$qjs_bin"
 
+  # shellcheck disable=SC2016
   readelf -d "$qjs_bin" | grep -F '$ORIGIN' >/dev/null \
     || die "qjs for $abi has no \$ORIGIN RUNPATH"
 
-  
-  
-  
+
+
+
   nm -D "$libqjs_so" 2>/dev/null | grep -E ' main$' \
     && warn "libqjs.so unexpectedly exports main() — double-check build output"
   nm -D "$qjs_bin" 2>/dev/null | grep -qE 'JS_NewRuntime|JS_Eval' \
     && warn "qjs binary unexpectedly exports QuickJS API symbols directly — double-check"
 
+  # shellcheck disable=SC2016
   readelf -d "$qjs_bin" | grep -E 'RUNPATH|RPATH' | grep -F '$ORIGIN' >/dev/null \
     || die "qjs executable for $abi has no \$ORIGIN RUNPATH"
 

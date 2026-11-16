@@ -2,6 +2,7 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
 echo_config_once
@@ -180,7 +181,8 @@ build_curl_cffi_cibuildwheel() {
   (
     cd "$CURL_CFFI_SRC_DIR"
     export IMPERSONATE_BUILD_DIR="$impersonate_lib_dir"
-    export IMPERSONATE_DEPS_DIR="$(curl_impersonate_deps_dir "$abi")"
+    IMPERSONATE_DEPS_DIR="$(curl_impersonate_deps_dir "$abi")"
+    export IMPERSONATE_DEPS_DIR
     export IMPERSONATE_LINK_TYPE=static
     export CIBW_TEST_SKIP="cp*-android_${cibw_arch}"
     rm -rf "$WHEELHOUSE_DIR/curl_cffi-$abi"
@@ -197,7 +199,7 @@ build_curl_cffi_cibuildwheel() {
 
 
 generate_termux_curl_cffi_package() {
-  local abi="$1" machine="$2" arch="$3"
+  local abi="$1" machine="$2"
   local impersonate_lib_dir; impersonate_lib_dir="$(curl_impersonate_lib_dir "$abi")"
   local impersonate_deps_dir; impersonate_deps_dir="$(curl_impersonate_deps_dir "$abi")"
 
@@ -278,11 +280,11 @@ EOF_BUILD
 }
 
 build_curl_cffi_termux_fallback() {
-  local abi="$1" machine="$2" arch="$3"
+  local abi="$1" machine="$2"
   local termux_arch; termux_arch="$(abi_termux_arch "$abi")"
 
   log "Building curl_cffi for $abi ($termux_arch) with Termux cross-Python"
-  generate_termux_curl_cffi_package "$abi" "$machine" "$arch"
+  generate_termux_curl_cffi_package "$abi" "$machine"
   (
     cd "$TERMUX_PACKAGES_DIR"
     export TERMUX_JAVA_HOME TERMUX_BUILDER_IMAGE_NAME CONTAINER_NAME TERMUX_DOCKER_RUN_EXTRA_ARGS
@@ -350,7 +352,7 @@ build_curl_cffi_for_abi() {
       publish_curl_cffi_wheel "$abi" "$wheel"
       ;;
     armeabi-v7a)
-      build_curl_cffi_termux_fallback "$abi" armv7l armv7
+      build_curl_cffi_termux_fallback "$abi" armv7l
       publish_curl_cffi_termux_pkg "$abi"
       ;;
     *) die "unknown ABI: $abi" ;;

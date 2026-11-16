@@ -2,6 +2,7 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
 echo_config_once
@@ -115,7 +116,10 @@ build_ca_certificates
 for_each_abi build_aria2_for_abi
 
 log "Runtime verification, on-device per ABI:"
+# shellcheck disable=SC2016
 log '  ARIA2_ROOT=/path/to/extracted/aria2/usr'
+# shellcheck disable=SC2016
 log '  $ARIA2_ROOT/bin/aria2c --version'
+# shellcheck disable=SC2016
 log '  $ARIA2_ROOT/bin/aria2c https://example.com/ -d /tmp   # checks TLS'
 log 'The bundled launcher sets LD_LIBRARY_PATH and PREFIX itself.'

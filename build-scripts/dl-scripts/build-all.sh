@@ -3,6 +3,9 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+export REQUIRE_ALL_PAYLOADS=1
+unset ONLY_PYTHON ONLY_QUICKJS ONLY_FFMPEG ONLY_ARIA2 ONLY_LIBFFI ONLY_CFFI ONLY_CURL_IMPERSONATE ONLY_CURL_CFFI STRICT_PARTIAL
+
 STAGES=(
   00-setup-toolchains.sh
   10-build-libffi.sh

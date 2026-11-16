@@ -25,13 +25,13 @@ BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 : "${TERMUX_JAVA_HOME:=}"
 if [ -z "$TERMUX_JAVA_HOME" ]; then
   _fermux_java_bin="$(command -v java 2>/dev/null || true)"
-  [ -n "$_fermux_java_bin" ] || { echo "[FAIL] required command not found: java" >&2; read -p "Press Enter to exit..." dummy; exit 1; }
+  [ -n "$_fermux_java_bin" ] || { echo "[FAIL] required command not found: java" >&2; read -r -p "Press Enter to exit..." _; exit 1; }
   _fermux_java_bin="$(readlink -f "$_fermux_java_bin")"
   TERMUX_JAVA_HOME="$(dirname "$(dirname "$_fermux_java_bin")")"
 fi
 [ -x "$TERMUX_JAVA_HOME/bin/java" ] || {
   echo "[FAIL] TERMUX_JAVA_HOME does not contain an executable bin/java: $TERMUX_JAVA_HOME" >&2
-  read -p "Press Enter to exit..." dummy
+  read -r -p "Press Enter to exit..." _
   exit 1
 }
 export TERMUX_JAVA_HOME
@@ -47,6 +47,7 @@ export CIBW_BUILD="${CIBW_BUILD:-cp314-*}"
 : "${TERMUX_PACKAGES_COMMIT:=d08cf6a8e256be9c9fc019430f6af5833d726980}"
 : "${CURL_IMPERSONATE_COMMIT:=5b1c3542fc7fc0e9fe623a6c9a848d16f92fe99a}"
 : "${FFMPEG_MAKER_COMMIT:=dd72b161ae5c759fd25a5cab971a3ff710f0bdba}"
+: "${FFMPEG_VERSION:=9.0.2}"
 : "${QUICKJS_NG_COMMIT:=e22ce4de4362dc5fd4794cfa3c03fc7fdba5f015}"
 : "${CURL_CFFI_COMMIT:=78301ad1ce8bb042a451ffdb05d3037ac9fa2ed1}"
 
@@ -85,7 +86,7 @@ mkdir -p "$WORK_ROOT" "$OUT_DIR" "$WHEELHOUSE_DIR"
 
 log()  { printf '\033[1;34m[%s]\033[0m %s\n' "$(date +%H:%M:%S)" "$*"; }
 warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$*" >&2; }
-die()  { printf '\033[1;31m[FAIL]\033[0m %s\n' "$*" >&2; read -p "Press Enter to exit..." dummy; exit 1; }
+die()  { printf '\033[1;31m[FAIL]\033[0m %s\n' "$*" >&2; read -r -p "Press Enter to exit..." _; exit 1; }
 
 reconstructed() { printf '\033[1;35m[RECONSTRUCTED]\033[0m %s\n' "$*"; }
 
@@ -226,12 +227,13 @@ relocate_termux_elf_runpaths() {
         rel="$(realpath --relative-to="$filedir" "$libdir")"
 
         if [ "$rel" = "." ]; then
+            # shellcheck disable=SC2016
             new='$ORIGIN'
         else
             new="\$ORIGIN/$rel"
         fi
 
-        log "Relocating RUNPATH: ${f#$stage/}: $old -> $new"
+        log "Relocating RUNPATH: ${f#"$stage"/}: $old -> $new"
         patchelf --set-rpath "$new" "$f"
         count=$((count + 1))
     done < <(find "$libdir" -type f -print0)
@@ -253,7 +255,7 @@ verify_no_termux_elf_runpaths() {
 
         case "$rp" in
             *"/data/data/com.termux/"*)
-                echo "[BAD RUNPATH] ${f#$stage/}: $rp" >&2
+                echo "[BAD RUNPATH] ${f#"$stage"/}: $rp" >&2
                 bad=1
                 ;;
         esac

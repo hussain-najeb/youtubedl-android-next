@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
 echo_config_once
@@ -155,11 +156,12 @@ MAKER_ABIS="${ABIS// /,}"
   export CFLAGS="${CFLAGS:-} -ffile-prefix-map=$HOME=/usr/src/fermux -fdebug-prefix-map=$HOME=/usr/src/fermux -fmacro-prefix-map=$HOME=/usr/src/fermux"
   export CXXFLAGS="${CXXFLAGS:-} -ffile-prefix-map=$HOME=/usr/src/fermux -fdebug-prefix-map=$HOME=/usr/src/fermux -fmacro-prefix-map=$HOME=/usr/src/fermux"
 
-  log "Building FFmpeg for ABIs: $MAKER_ABIS (all free + GPL libraries)"
+  log "Building FFmpeg $FFMPEG_VERSION for ABIs: $MAKER_ABIS (all free + GPL libraries)"
 
   export EXTRA_BUILD_CONFIGURATION_FLAGS="${EXTRA_BUILD_CONFIGURATION_FLAGS:-} --enable-jni --enable-mediacodec"
 
   maker_args=(
+    "--source-tar=$FFMPEG_VERSION"
     --enable-all-free
     --enable-all-gpl
     "--android-api-level=$API_LEVEL"
@@ -178,7 +180,9 @@ verify_ffmpeg_for_abi() {
   require_file "$ffmpeg_bin" "ffmpeg binary for $abi"
   require_file "$ffprobe_bin" "ffprobe binary for $abi"
 
+  # shellcheck disable=SC2016
   patchelf --set-rpath '$ORIGIN' "$ffmpeg_bin"
+  # shellcheck disable=SC2016
   patchelf --set-rpath '$ORIGIN' "$ffprobe_bin"
   file "$ffmpeg_bin"
   file "$ffprobe_bin"
@@ -187,10 +191,13 @@ verify_ffmpeg_for_abi() {
   mkdir -p "$OUT_DIR/ffmpeg/$abi"
   cp "$ffmpeg_bin" "$OUT_DIR/ffmpeg/$abi/libffmpeg.so"
   cp "$ffprobe_bin" "$OUT_DIR/ffmpeg/$abi/libffprobe.so"
-  cp -a "$FFMPEG_MAKER_DIR/build/ffmpeg/$abi/lib/." "$OUT_DIR/ffmpeg/$abi/" 2>/dev/null || true
+  find "$FFMPEG_MAKER_DIR/build/ffmpeg/$abi/lib" -maxdepth 1 \( -type f -o -type l \) -name '*.so*' \
+    ! -name '*.zip.so' \
+    -exec cp -a {} "$OUT_DIR/ffmpeg/$abi/" \; 2>/dev/null || true
 
   local staged="$OUT_DIR/ffmpeg/$abi"
   for exe in "$staged/libffmpeg.so" "$staged/libffprobe.so"; do
+    # shellcheck disable=SC2016
     readelf -d "$exe" | grep -E 'RUNPATH|RPATH' | grep -F '$ORIGIN' >/dev/null \
       || die "$(basename "$exe") for $abi has no \$ORIGIN RUNPATH"
   done

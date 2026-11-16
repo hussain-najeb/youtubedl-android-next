@@ -24,6 +24,7 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
 echo_config_once
@@ -134,6 +135,7 @@ build_cffi_cibuildwheel() {
   mkdir -p "$repair_root/unpacked/cffi.libs"
   cp "$runtime_prefix/lib/libffi.so" "$repair_root/unpacked/cffi.libs/libffi.so"
 
+  # shellcheck disable=SC2016
   patchelf --set-rpath '$ORIGIN/cffi.libs' "$repair_backend"
 
   rm -f "$wheel"
@@ -236,7 +238,9 @@ build_cffi_termux_fallback() {
     || die "could not bundle libffi beside 32-bit CFFI for $abi"
 
   require_cmd patchelf
+  # shellcheck disable=SC2016
   patchelf --set-rpath '$ORIGIN/cffi.libs' "$backend"
+  # shellcheck disable=SC2016
   readelf -d "$backend" | grep -E 'RUNPATH|RPATH' | grep -F '$ORIGIN/cffi.libs' >/dev/null \
     || die "failed to set self-contained CFFI RUNPATH for $abi"
 

@@ -107,7 +107,7 @@ object YoutubeDL {
     fun initYtdlp(appContext: Context, ytdlpDir: File) {
         if (!ytdlpDir.exists()) ytdlpDir.mkdirs()
         val ytdlpBinary = File(ytdlpDir, ytdlpBin)
-        val ytdlpVersion = appContext.resources.openRawResourceFd(R.raw.ytdlp).use { it.length.toString()}
+        val ytdlpVersion = appContext.resources.openRawResourceFd(R.raw.ytdlp).use { it.length.toString() }
         if (!ytdlpBinary.exists() || shouldUpdateYtdlp(appContext, ytdlpVersion)) {
             FileUtils.deleteQuietly(ytdlpBinary)
             try {
@@ -307,7 +307,7 @@ object YoutubeDL {
     /**
      * Call this function to start any download, although, don't switch `redirectErrorStream` to `true` unless you want to debug,
      * since it corrupts JSON!
-    */
+     */
     suspend fun execute(
         request: YoutubeDLRequest,
         processId: UUID? = null,
