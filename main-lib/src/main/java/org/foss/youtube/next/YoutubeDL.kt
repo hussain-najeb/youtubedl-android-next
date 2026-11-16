@@ -107,7 +107,9 @@ object YoutubeDL {
     fun initYtdlp(appContext: Context, ytdlpDir: File) {
         if (!ytdlpDir.exists()) ytdlpDir.mkdirs()
         val ytdlpBinary = File(ytdlpDir, ytdlpBin)
-        if (!ytdlpBinary.exists()) {
+        val ytdlpVersion = appContext.resources.openRawResourceFd(R.raw.ytdlp).use { it.length.toString()}
+        if (!ytdlpBinary.exists() || shouldUpdateYtdlp(appContext, ytdlpVersion)) {
+            FileUtils.deleteQuietly(ytdlpBinary)
             try {
                 val inputStream =
                     /* will be renamed to yt-dlp */
@@ -117,7 +119,15 @@ object YoutubeDL {
                 FileUtils.deleteQuietly(ytdlpDir)
                 throw YoutubeDLException("failed to initialize", e)
             }
+            updateYtdlp(appContext, ytdlpVersion)
         }
+    }
+
+    private fun shouldUpdateYtdlp(appContext: Context, version: String): Boolean =
+        version != SharedPrefsHelper[appContext, ytdlpLibVersion]
+
+    private fun updateYtdlp(appContext: Context, version: String) {
+        update(appContext, ytdlpLibVersion, version)
     }
 
     fun initPython(appContext: Context, pythonDir: File) {
@@ -515,6 +525,7 @@ object YoutubeDL {
     private const val aria2cLibVersion = "aria2cLibVersion"
     const val ytdlpDirName = "yt-dlp"
     const val ytdlpBin = "yt-dlp"
+    private const val ytdlpLibVersion = "ytdlpLibVersion"
     private const val pythonLibVersion = "pythonLibVersion"
     val objectMapper = ObjectMapper()
 

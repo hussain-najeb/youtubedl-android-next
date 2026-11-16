@@ -1,0 +1,76 @@
+name: Library CI Pipeline
+
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+on:
+    push:
+        branches: [master]
+    pull_request:
+        branches: [master]
+
+permissions:
+    contents: read
+
+jobs:
+    lint-test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup JDK
+              uses: actions/setup-java@v5
+              with:
+                  distribution: temurin
+                  java-version: 21
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v5
+
+            - name: Run Ktlint
+              run: ./gradlew ktlintCheck
+              env:
+                  GRADLE_OPTS: -Xmx3g
+
+    build-check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup JDK
+              uses: actions/setup-java@v5
+              with:
+                  distribution: temurin
+                  java-version: 21
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v5
+
+            - name: Build
+              run: ./gradlew build
+              timeout-minutes: 20
+
+
+    shellcheck:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Shellcheck Test
+              run: find build-scripts -name '*.sh' -exec shellcheck {} +
+
+    bash-check:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Bash Test
+              run: find build-scripts -name '*.sh' -exec bash -n {} +
+
