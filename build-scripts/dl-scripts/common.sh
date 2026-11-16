@@ -189,6 +189,7 @@ termux_build_package() {
   (
     cd "$TERMUX_PACKAGES_DIR"
     export TERMUX_JAVA_HOME TERMUX_BUILDER_IMAGE_NAME CONTAINER_NAME TERMUX_DOCKER_RUN_EXTRA_ARGS
+    # shellcheck disable=SC2030,SC2031
     export JAVA_HOME="$TERMUX_JAVA_HOME"
     ./scripts/run-docker.sh ./build-package.sh -a "$termux_arch" "$@" "$pkg"
   )

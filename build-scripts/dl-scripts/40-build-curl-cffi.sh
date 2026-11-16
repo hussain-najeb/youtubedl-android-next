@@ -285,12 +285,7 @@ build_curl_cffi_termux_fallback() {
 
   log "Building curl_cffi for $abi ($termux_arch) with Termux cross-Python"
   generate_termux_curl_cffi_package "$abi" "$machine"
-  (
-    cd "$TERMUX_PACKAGES_DIR"
-    export TERMUX_JAVA_HOME TERMUX_BUILDER_IMAGE_NAME CONTAINER_NAME TERMUX_DOCKER_RUN_EXTRA_ARGS
-    export JAVA_HOME="$TERMUX_JAVA_HOME"
-    ./scripts/run-docker.sh ./build-package.sh -f -a "$termux_arch" python-curl-cffi-android
-  )
+  termux_build_package "$termux_arch" python-curl-cffi-android -f
 
   local deb
   deb="$(find "$TERMUX_PACKAGES_DIR/output" -maxdepth 1 -name "python-curl-cffi-android_*_${termux_arch}.deb" | sort | tail -1)"
@@ -299,7 +294,8 @@ build_curl_cffi_termux_fallback() {
   rm -rf "$extract"
   mkdir -p "$extract"
   dpkg-deb -x "$deb" "$extract"
-  local pkg_site="$extract/data/data/com.termux/files/usr/lib/python$(python_major_minor)/site-packages"
+  local pkg_site
+  pkg_site="$extract/data/data/com.termux/files/usr/lib/python$(python_major_minor)/site-packages"
   require_dir "$pkg_site/curl_cffi" "curl_cffi site-package for $abi"
   log "Extracted and verified Termux-built curl_cffi for $abi"
 }
@@ -324,7 +320,8 @@ publish_curl_cffi_termux_pkg() {
   mkdir -p "$out"
   cp "$deb" "$out/"
   # The extracted site-packages tree (what stage 50 actually injects) as a plain tarball.
-  local pkg_site="$WHEELHOUSE_DIR/curl_cffi-$abi-termux-pkg/data/data/com.termux/files/usr/lib/python$(python_major_minor)/site-packages"
+  local pkg_site
+  pkg_site="$WHEELHOUSE_DIR/curl_cffi-$abi-termux-pkg/data/data/com.termux/files/usr/lib/python$(python_major_minor)/site-packages"
   require_dir "$pkg_site/curl_cffi" "extracted curl_cffi for $abi"
   tar -C "$pkg_site" -czf "$out/curl_cffi-${CURL_CFFI_VERSION}-${abi}-site-packages.tar.gz" curl_cffi
   log "curl_cffi (Termux package) published for $abi -> $out"

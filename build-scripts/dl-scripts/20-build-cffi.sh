@@ -222,7 +222,8 @@ build_cffi_termux_fallback() {
   rm -rf "$extract"
   mkdir -p "$extract"
   dpkg-deb -x "$deb" "$extract"
-  local pkg_site="$extract/data/data/com.termux/files/usr/lib/python$(python_major_minor)/site-packages"
+  local pkg_site
+  pkg_site="$extract/data/data/com.termux/files/usr/lib/python$(python_major_minor)/site-packages"
   require_dir "$pkg_site" "CFFI site-packages for $abi"
   local backend
   backend="$(find "$pkg_site" -name '_cffi_backend*.so' -type f -print -quit)"
