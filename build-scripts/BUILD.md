@@ -3,7 +3,56 @@ Welcome to the build documentation of **YoutubeDL-Android Next**!
 This document will teach you what the *build.tar.gz* does and how to build all the components this library has.
 
 
+
+
+## What you need
+
+You need a bunch of software to execute these commands, like having **Java** installed and setting it in your "**.bashrc**" file, I strongly suggest using **Java** 21 from **Termuin**!
+
+Also you need docker installed, as its crucial to use, fetch, cross-compile, and do the magic that is needed for the scripts to work, something like:
+
+```
+sudo apt install -y docker.io
+```
+
+For **Ubuntu** systems, I assume you can replace "apt" with "dnf" for example.
+
+Also the scripts do need a bunch of software that assumes you installed, but just to be safe, here is all the software you need:
+
+```
+sudo apt update
+
+sudo apt install -y \
+    docker.io \
+    git \
+    python3 \
+    python3-pip \
+    python3-venv \
+    cmake \
+    ninja-build \
+    build-essential \
+    binutils \
+    adb \
+    curl \
+    coreutils \
+    dpkg-dev \
+    patchelf \
+    file \
+    zip \
+    unzip \
+    tar \
+    pkg-config \
+    autoconf \
+    automake \
+    libtool \
+    gettext \
+    perl
+```
+
+Then you can just copy and paste these commands, run them, and then run the "**./build-all**" script and face no issues (hopfully).
+
 ## Components
+
 The build folder has all the components you need to use in this library, from *libcffi* to checking the stack on your own phone.
 
 The folder has a bunch of steps, all of which will be explained.
@@ -85,7 +134,9 @@ The final runtime ZIP contains the executable, wrapper, libraries and TLS certif
 
 #### 90-install-payloads.sh
 
-This is the final-ish step, as it combines all previously built components into an Android Gradle project, it copies **Python** and **QuickJS-NG** into the module's jniLibs (`natives`), copies **ffmpeg** and **ffprobe** and package them in a ZIP archive and that includes `libc++_shared.so`, installs the aria2 runtime ZIP and native executable, removes stale native libraries from previous builds, runs Gradle clean, builds the release AAR, checks that all expected ABI libraries exist inside the AAR. 
+This is the final-ish step, as it combines all previously built components into an Android Gradle project, it copies **Python** and **QuickJS-NG** into the module's jniLibs (`natives` and `natives-x86_64`), copies **ffmpeg** and **ffprobe** and package them in a ZIP archive and that includes `libc++_shared.so`, installs the aria2 runtime ZIP and native executable, removes stale native libraries from previous builds, runs Gradle clean, builds the release AAR, checks that all expected ABI libraries exist inside the AAR.
+
+When invoked via `build-all.sh`, it requires every component to be freshly built in `out/`. When invoked standalone or via `dev-run.sh`, it supports partial installs using `ONLY_*` flags (or automatically keeps the existing `jniLibs` files for components not present in `out/`, unless `STRICT_PARTIAL=1` is set) and prints a summary banner of any skipped components before and after the Gradle build.
 
 And this is the final build and packaging stage.
 
@@ -114,18 +165,19 @@ This script runs all the build stages sequentially, from 00 through 90. It build
 
 #### dev-run.sh
 
-This is the development runner, meant for when you don't want to rebuild everything. It supports selecting a single ABI and a stage range, and it can produce detailed logs and tracing, as well as run stage 95 for you.
+This is the development runner, meant for when you don't want to rebuild everything. It supports selecting a single ABI (or `all` for every configured ABI), a stage range, and component-specific `ONLY_*` flags so you can rebuild and package one component without running the stages in between. It also produces detailed logs and tracing, and can run stage 95 for you.
 
 They serve different purposes, so here is how the two runners compare:
 
-| Feature             | build-all.sh             | dev-run.sh       |
-| :------------------ | :----------------------- | :--------------- |
-| Full build          | Yes                      | Yes              |
-| Individual ABI      | No, uses configured ABIS | Yes              |
-| Select stage range  | No                       | Yes              |
-| Detailed tracing    | No                       | Yes              |
-| Main log file       | No                       | Yes              |
-| Device verification | Manual                   | Can run stage 95 |
+| Feature             | build-all.sh                  | dev-run.sh                      |
+| :------------------ | :---------------------------- | :------------------------------ |
+| Full build          | Yes                           | Yes                             |
+| Individual ABI      | No, uses configured ABIS      | Yes (`arm64-v8a`, etc. or `all`)|
+| Select stage range  | No                            | Yes                             |
+| Single component    | No (requires all payloads)    | Yes (`ONLY_*=1` flags)          |
+| Detailed tracing    | No                            | Yes                             |
+| Main log file       | No                            | Yes                             |
+| Device verification | Manual                        | Can run stage 95                |
 
 For example, this runs only **ffmpeg** for ARM64:
 
@@ -138,6 +190,26 @@ And this runs stages 50 through 70 (**Python**, **ffmpeg** and **QuickJS**) for 
 ```bash
 ./dev-run.sh arm64-v8a 50 70
 ```
+
+If you want to rebuild **ffmpeg** and immediately install and package it into the AARs (stage 90) across all ABIs without running stages 70 or 80 in between, use `ONLY_FFMPEG=1`:
+
+```bash
+ONLY_FFMPEG=1 ./dev-run.sh all 60 90
+```
+
+Available component flags for `dev-run.sh` and `90-install-payloads.sh`:
+
+| Flag                      | Stage(s) Run         | Notes                                                                 |
+| :------------------------ | :------------------- | :-------------------------------------------------------------------- |
+| `ONLY_FFMPEG=1`           | `60` (+ `00`, `90`)  | Rebuilds and installs only **ffmpeg** / **ffprobe**                   |
+| `ONLY_QUICKJS=1`          | `70` (+ `00`, `90`)  | Rebuilds and installs only **QuickJS-ng**                             |
+| `ONLY_ARIA2=1`            | `80` (+ `00`, `90`)  | Rebuilds and installs only **Aria2-Next**                             |
+| `ONLY_PYTHON=1`           | `50` (+ `00`, `90`)  | Rebuilds and installs only the **Python** runtime                     |
+| `ONLY_LIBFFI=1`           | `10`, `20`, `50` (+ `90`) | Automatically implies `ONLY_CFFI=1` and `ONLY_PYTHON=1` so the rebuilt library and wheel enter `libpython.zip.so` |
+| `ONLY_CFFI=1`             | `20`, `50` (+ `90`)       | Automatically implies `ONLY_PYTHON=1` so the wheel enters `libpython.zip.so`  |
+| `ONLY_CURL_IMPERSONATE=1` | `30`, `40`, `50` (+ `90`) | Automatically implies `ONLY_CURL_CFFI=1` and `ONLY_PYTHON=1` so the static libs are relinked and enter `libpython.zip.so` |
+| `ONLY_CURL_CFFI=1`        | `40`, `50` (+ `90`)       | Automatically implies `ONLY_PYTHON=1` so the wheel enters `libpython.zip.so`  |
+| `STRICT_PARTIAL=1`        | `90`                 | Fails if any component is missing from `out/` when no `ONLY_*` flag is set |
 
 
 #### apply-termux-patches.sh
@@ -187,3 +259,11 @@ The purpose of this entire system is to produce these runtime components:
 | `libaria2.zip.so`  | **aria2** runtime libraries and certificates    |
 
 These are packaged into the release AAR under `jni/<ABI>/`.
+
+- - -
+
+# Final Word
+
+One last thing, although I have tested these to death, you might face a problem, as everything in life, report it please! Tho for the sake of transparency, I am a Kotlin developer and a TypeScript dabbler, anything but a shell script master, these scripts were created using AI tools, although I did my best to check if they have any issues, and they probably have an issue, you can always report it as a ticket and I will do my best to solve it.
+
+I heard that in Belgium in the 2003, a woman had her best election run, a 4000-ish vote suddenly gained, even tho she wasn't the most well known, as much as she wanted to believe, it wasn't because she was a great candidate, but because a flipped a value somewhere in the software that was that was counting the votes, was effected and gave her an unreasonable number, turns out that it was a **COSMIC RAY** (look these up, crazy stuff) somehow effected that software to do the flipping, and sadly, she didn't win, it was corrected ( rigged in my book, the universe choose her!), how is that relevant to this? **STUFF BREAK ALL THE TIME**, even stuff that should't or technically can't (and i thought it was funny).
