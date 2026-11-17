@@ -7,7 +7,7 @@ This document will teach you what the *build.tar.gz* does and how to build all t
 
 ## What you need
 
-You need a bunch of software to execute these commands, like having **Java** installed and setting it in your "**.bashrc**" file, I strongly suggest using **Java** 21 from **Termuin**!
+You need a bunch of software to execute these commands, like having **Java** installed and setting it in your "**.bashrc**" file, I strongly suggest using **Java** 21 from **Termux**!
 
 Also you need docker installed, as its crucial to use, fetch, cross-compile, and do the magic that is needed for the scripts to work, something like:
 
@@ -37,6 +37,8 @@ sudo apt install -y \
     coreutils \
     dpkg-dev \
     patchelf \
+    meson \
+    nasm \
     file \
     zip \
     unzip \
@@ -49,7 +51,7 @@ sudo apt install -y \
     perl
 ```
 
-Then you can just copy and paste these commands, run them, and then run the "**./build-all**" script and face no issues (hopfully).
+Then you can just copy and paste these commands, run them, and then run the "**./build-all**" script and face no issues (hopefully).
 
 ## Components
 
@@ -266,4 +268,4 @@ These are packaged into the release AAR under `jni/<ABI>/`.
 
 One last thing, although I have tested these to death, you might face a problem, as everything in life, report it please! Tho for the sake of transparency, I am a Kotlin developer and a TypeScript dabbler, anything but a shell script master, these scripts were created using AI tools, although I did my best to check if they have any issues, and they probably have an issue, you can always report it as a ticket and I will do my best to solve it.
 
-I heard that in Belgium in the 2003, a woman had her best election run, a 4000-ish vote suddenly gained, even tho she wasn't the most well known, as much as she wanted to believe, it wasn't because she was a great candidate, but because a flipped a value somewhere in the software that was that was counting the votes, was effected and gave her an unreasonable number, turns out that it was a **COSMIC RAY** (look these up, crazy stuff) somehow effected that software to do the flipping, and sadly, she didn't win, it was corrected ( rigged in my book, the universe choose her!), how is that relevant to this? **STUFF BREAK ALL THE TIME**, even stuff that should't or technically can't (and i thought it was funny).
+I heard that in Belgium in the 2003, a woman had an unexpectedly successful election campaign, a 4000-ish vote suddenly gained, even tho she wasn't the most well known, as much as she wanted to believe, it wasn't because she was a great candidate, but because a flipped a value somewhere in the software that was that was counting the votes, was affected and gave her an unreasonable number, turns out that it was a **COSMIC RAY** (look these up, crazy stuff) somehow effected that software to do the flipping, and sadly, she didn't win, it was corrected ( rigged in my book, the universe chose her!), how is that relevant to this? **STUFF BREAKS ALL THE TIME**, even stuff that should't or technically can't (and i thought it was funny).
