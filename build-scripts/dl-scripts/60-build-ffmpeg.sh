@@ -17,19 +17,18 @@ git -C "$FFMPEG_MAKER_DIR" reset --hard "$FFMPEG_MAKER_COMMIT"
 [ "$(git -C "$FFMPEG_MAKER_DIR" rev-parse HEAD)" = "$FFMPEG_MAKER_COMMIT" ] \
   || die "ffmpeg-android-maker checkout does not match pinned commit $FFMPEG_MAKER_COMMIT"
 
-# ffmpeg-android-maker is a plain build script with no hooks for our needs, so after the
-# pinned checkout (which resets it to a clean copy every run) we patch its scripts in place.
-# Three patches follow: the mbedTLS build step, FFmpeg's configure call, and the TLS detection.
 ffmpeg_build_sh="$FFMPEG_MAKER_DIR/scripts/ffmpeg/build.sh"
 require_file "$ffmpeg_build_sh" "ffmpeg-android-maker FFmpeg build script"
 
 mbedtls_download_sh="$FFMPEG_MAKER_DIR/scripts/mbedtls/download.sh"
 mbedtls_build_sh="$FFMPEG_MAKER_DIR/scripts/mbedtls/build.sh"
-# Bump FreeType version to fix 404 download errors
 
 sed -i "s/2.14.3/2.15.0/g" "$FFMPEG_MAKER_DIR/scripts/libfreetype/download.sh"
 
 sed -i "s/2.14.3/2.15.0/g" "$FFMPEG_MAKER_DIR/scripts/libfreetype/build.sh"
+
+sed -i '/\${CMAKE_EXECUTABLE}/i sed -i "s/cmake_policy(SET CMP0025 OLD)/cmake_policy(SET CMP0025 NEW)/g; s/cmake_policy(SET CMP0054 OLD)/cmake_policy(SET CMP0054 NEW)/g" ../source/CMakeLists.txt' \
+  "$FFMPEG_MAKER_DIR/scripts/libx265/build.sh"
 require_file "$mbedtls_download_sh" "ffmpeg-android-maker mbedTLS download script"
 require_file "$mbedtls_build_sh" "ffmpeg-android-maker mbedTLS build script"
 
@@ -148,7 +147,7 @@ MAKER_ABIS="${ABIS// /,}"
 (
   cd "$FFMPEG_MAKER_DIR"
 
-  export PATH="$HOME/.local/bin:$PATH"
+  export PATH="$PATH:$HOME/.local/bin"
   export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
   # Strip the build machine's home path from compiled output (reproducibility / no path leaks).
