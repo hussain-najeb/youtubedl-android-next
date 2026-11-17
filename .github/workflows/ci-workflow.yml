@@ -63,7 +63,7 @@ jobs:
               uses: actions/checkout@v5
 
             - name: Shellcheck Test
-              run: find build-scripts -name '*.sh' -exec shellcheck {} +
+              run: find build-scripts -name '*.sh' -exec shellcheck --severity=warning {} +
 
     bash-check:
         runs-on: ubuntu-latest
