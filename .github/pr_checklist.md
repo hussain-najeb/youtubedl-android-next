@@ -3,11 +3,13 @@
 
 ## Type of change
 - [ ] Bug fix
-- [ ] New feature
-- [ ] Refactor / cleanup
-- [ ] Build scripts / CI
+- [ ] Feature
+- [ ] Refactor or cleanup
+- [ ] Build scripts or CI
 - [ ] Documentation
 
 ## Checklist
-- [ ] I 
-- [ ] I tested this on a device/emulator and ran a download that succeeded
+- [ ] This PR is tested this on a device/emulator and a download test that succeeded has been run.
+- [ ] This PR is in compliance with the [library's AI Policy](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/AI_POLICY.md)
+- [ ] This PR requires another PR in order to merge
+    
