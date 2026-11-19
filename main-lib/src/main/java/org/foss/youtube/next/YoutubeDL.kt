@@ -24,6 +24,8 @@ object YoutubeDL {
     private var initialized = false
     private var pythonPath: File? = null
     private var ffmpegPath: File? = null
+    private var ffprobePath: File? = null
+    private var ffmpegLibDir: File? = null
     private var aria2cPath: File? = null
     private var ytdlpPath: File? = null
     private var binDir: File? = null
@@ -57,8 +59,10 @@ object YoutubeDL {
             binDir = File(appContext.applicationInfo.nativeLibraryDir)
             pythonPath = File(binDir, pythonBinName)
             ffmpegPath = File(binDir, ffmpegBinName)
+            ffprobePath = File(binDir, ffprobeBinName)
             val pythonDir = File(packagesDir, pythonDirName)
             val ffmpegDir = File(packagesDir, ffmpegDirName)
+            ffmpegLibDir = File(ffmpegDir, "usr/lib")
             val aria2cDir = File(packagesDir, aria2cDirName)
             val ytdlpDir = File(baseDir, ytdlpDirName)
             ytdlpPath = File(ytdlpDir, ytdlpBin)
@@ -203,6 +207,38 @@ object YoutubeDL {
     private fun assertInit() {
         check(initialized) { "instance not initialized" }
     }
+
+    /**
+     * Returns the bundled `ffmpeg` executable (`libffmpeg.so`).
+     * Requires [initializeLib] to have completed first.
+     */
+    fun getFFmpegBinary(): File {
+        assertInit()
+        return requireNotNull(ffmpegPath) { "FFmpeg binary path not initialized" }
+    }
+
+    /**
+     * Returns the bundled `ffprobe` executable (`libffprobe.so`).
+     * Requires [initializeLib] to have completed first.
+     */
+    fun getFFprobeBinary(): File {
+        assertInit()
+        return requireNotNull(ffprobePath) { "FFprobe binary path not initialized" }
+    }
+
+    /**
+     * Returns the `LD_LIBRARY_PATH` value required to execute [getFFmpegBinary] or
+     * [getFFprobeBinary] directly via `ProcessBuilder`.
+     * Requires [initializeLib] to have completed first.
+     */
+    fun getFFLibPath(): String {
+        assertInit()
+        val libDir = requireNotNull(ffmpegLibDir) { "FFmpeg library dir not initialized" }
+        val nativeDir = requireNotNull(binDir) { "Native library dir not initialized" }
+        return "${libDir.absolutePath}:${nativeDir.absolutePath}"
+    } // since you already need initializeLib anyway to... initializeLib, this should work
+
+    // These were add for use of ffmpeg outside yt-dlp, really handy if you think about it
 
     private fun ignoreErrors(request: YoutubeDLRequest, out: String): Boolean =
         request.hasOption("--dump-json") && out.isNotEmpty() && request.hasOption("--ignore-errors")
@@ -517,6 +553,7 @@ object YoutubeDL {
     private const val pythonDirName = "python"
     private const val ffmpegDirName = "ffmpeg"
     private const val ffmpegBinName = "libffmpeg.so"
+    private const val ffprobeBinName = "libffprobe.so"
     private const val ffmpegLibName = "libffmpeg.zip.so"
     private const val ffmpegLibVersion = "ffmpegLibVersion"
     private const val aria2cDirName = "aria2c"

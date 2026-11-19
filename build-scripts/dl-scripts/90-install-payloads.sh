@@ -173,6 +173,10 @@ install_ffmpeg() {
   libcxx="$(ndk_libcxx_for_abi "$abi")"
   require_file "$libcxx" "NDK libc++_shared.so for $abi"
   cp "$libcxx" "$tmp/usr/lib/libc++_shared.so"
+  local strip_bin="$TERMUX_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+  if [ -x "$strip_bin" ]; then
+    "$strip_bin" --strip-unneeded "$tmp/usr/lib/libc++_shared.so"
+  fi
 
   rm -f "$dest/libffmpeg.zip.so"
   (cd "$tmp" && zip -q -r "$dest/libffmpeg.zip.so" usr)

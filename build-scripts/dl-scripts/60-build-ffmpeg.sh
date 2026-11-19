@@ -134,6 +134,19 @@ if 'Fermux: sanitize FFmpeg build metadata' not in s:
 
     s = s.replace(needle, needle + sanitizer, 1)
 
+# Patch 2d: enable Android MediaCodec hardware encoders/decoders directly in configure.
+# Exporting EXTRA_BUILD_CONFIGURATION_FLAGS before calling ffmpeg-android-maker.sh gets wiped by
+# scripts/export-build-variables.sh on every ABI iteration, so we inject the flags here instead.
+if '--enable-mediacodec' not in s:
+    target = '  --disable-vulkan \\\n'
+    if target not in s:
+        raise SystemExit("Could not locate --disable-vulkan line in FFmpeg configure command")
+    s = s.replace(
+        target,
+        target + '  --enable-jni \\\n  --enable-mediacodec \\\n',
+        1,
+    )
+
 # Patch 3: make FFmpeg's configure find mbedTLS without pkg-config by replacing
 # require_pkg_config with a direct require that links -lmbedtls -lmbedx509 -lmbedcrypto.
 # NOTE: this one fails silently - if configure's text changes, the sed just does nothing.
@@ -151,14 +164,12 @@ MAKER_ABIS="${ABIS// /,}"
   export PATH="$HOME/.local/bin:$PATH"
   export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-  # Strip the build machine's home path from compiled output (reproducibility / no path leaks).
+  # Strip the build machine's home path from compiled output (reproducibility / no path leaks), "fermux" here is just the name of the app that uses this lib, nothing confusing.
 
   export CFLAGS="${CFLAGS:-} -ffile-prefix-map=$HOME=/usr/src/fermux -fdebug-prefix-map=$HOME=/usr/src/fermux -fmacro-prefix-map=$HOME=/usr/src/fermux"
   export CXXFLAGS="${CXXFLAGS:-} -ffile-prefix-map=$HOME=/usr/src/fermux -fdebug-prefix-map=$HOME=/usr/src/fermux -fmacro-prefix-map=$HOME=/usr/src/fermux"
 
-  log "Building FFmpeg $FFMPEG_VERSION for ABIs: $MAKER_ABIS (all free + GPL libraries)"
-
-  export EXTRA_BUILD_CONFIGURATION_FLAGS="${EXTRA_BUILD_CONFIGURATION_FLAGS:-} --enable-jni --enable-mediacodec"
+  log "Building FFmpeg $FFMPEG_VERSION for ABIs: $MAKER_ABIS (all free + GPL libraries + MediaCodec)"
 
   maker_args=(
     "--source-tar=$FFMPEG_VERSION"
@@ -180,9 +191,7 @@ verify_ffmpeg_for_abi() {
   require_file "$ffmpeg_bin" "ffmpeg binary for $abi"
   require_file "$ffprobe_bin" "ffprobe binary for $abi"
 
-  # shellcheck disable=SC2016
   patchelf --set-rpath '$ORIGIN' "$ffmpeg_bin"
-  # shellcheck disable=SC2016
   patchelf --set-rpath '$ORIGIN' "$ffprobe_bin"
   file "$ffmpeg_bin"
   file "$ffprobe_bin"
@@ -205,6 +214,9 @@ verify_ffmpeg_for_abi() {
   for dep in libavdevice.so libavfilter.so libavformat.so libavcodec.so libswresample.so libswscale.so libavutil.so; do
     require_file "$staged/$dep" "$dep staged beside FFmpeg for $abi"
   done
+
+  readelf -d "$staged/libavcodec.so" | grep -F 'libmediandk.so' >/dev/null \
+    || die "libavcodec.so for $abi is missing libmediandk.so (MediaCodec hardware encoding was not enabled)" # shame, it would take a lot of time to rebuild
 
   log "FFmpeg/ffprobe staged for $abi with self-contained \$ORIGIN runtime lookup"
 }
