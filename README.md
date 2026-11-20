@@ -29,7 +29,7 @@
 | QuickJS-NG        |             v0.18.0 |
 | Aria2-Next        |             v3.0.10 |
 | FFmpeg            |              v9.0.2 |
-| Python            |            v3.14.10 |
+| Python            |            v3.14.6 |
 | libffi            |              v3.8.0 |
 | Android API Level |                  24 |
 | Android NDK       | r30 (30.0.16248370) |
