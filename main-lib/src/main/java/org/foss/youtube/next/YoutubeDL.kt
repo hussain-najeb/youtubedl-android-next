@@ -499,10 +499,12 @@ object YoutubeDL {
     }
 
     /**
-     * This is a suspend function with a mutex, it fetches new versions of **yt-dlp**
+     * This is a suspend function, it fetches new versions of **yt-dlp**
      * then compares them to the exiting version, if there was
      * a diversion, the function will replace the exiting version
      * with the new **yt-dlp** version
+     *
+     * This function is guarded with a mutex
      */
     suspend fun updateYoutubeDL(
         appContext: Context,
@@ -540,6 +542,10 @@ object YoutubeDL {
     }
 
     private const val GITHUB = "https://api.github.com/repos"
+
+    /**
+     * Call this class to pick out the update channel, the recommended choice is usually `Nightly`.
+     */
     enum class UpdateChannel(val apiUrl: String) {
         Stable("$GITHUB/yt-dlp/yt-dlp/releases/latest"),
         Nightly("$GITHUB/yt-dlp/yt-dlp-nightly-builds/releases/latest"),

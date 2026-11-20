@@ -54,7 +54,6 @@ internal object YoutubeDLUpdater {
         update(appContext, dlpVersionNameKey, name)
     }
 
-    @SuppressLint("SuspiciousIndentation")
     private suspend fun checkForUpdate(appContext: Context, youtubeDLChannel: YoutubeDL.UpdateChannel): JsonNode? =
         withContext(Dispatchers.IO) {
             val url = URL(youtubeDLChannel.apiUrl)
