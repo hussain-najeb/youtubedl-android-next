@@ -20,7 +20,7 @@ vanniktech-maven-publish = "0.37.0"
 ktlint = "14.2.0"
 
 # bump with each release
-appversion = "0.1.6"
+appversion = "0.1.7"
 natives = "0.1.0"
 
 [plugins]

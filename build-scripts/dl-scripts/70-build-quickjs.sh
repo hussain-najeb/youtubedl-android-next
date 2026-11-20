@@ -83,6 +83,10 @@ build_quickjs_for_abi() {
   mkdir -p "$OUT_DIR/quickjs/$abi"
   cp "$libqjs_so" "$OUT_DIR/quickjs/$abi/libqjs.so"
   cp "$qjs_bin" "$OUT_DIR/quickjs/$abi/libqjs-cli.so"
+  local strip_bin="$TERMUX_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+  if [ -x "$strip_bin" ]; then
+    "$strip_bin" --strip-unneeded "$OUT_DIR/quickjs/$abi/libqjs.so"
+  fi
   log "QuickJS packaged for $abi: libqjs.so (shared lib) + libqjs-cli.so (qjs CLI)"
 }
 

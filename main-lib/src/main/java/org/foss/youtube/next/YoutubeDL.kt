@@ -32,8 +32,6 @@ object YoutubeDL {
     private var ENV_LD_LIBRARY_PATH: String? = null
     private var ENV_SSL_CERT_FILE: String? = null
     private var ENV_PYTHONHOME: String? = null
-    private var ENV_ARIA2_OPENSSL_CONF: String? = null
-    private var ENV_ARIA2_OPENSSL_MODULES: String? = null
     private var TMPDIR: String = ""
     private val updateMutex = Mutex()
     private val initMutex = Mutex()
@@ -63,21 +61,18 @@ object YoutubeDL {
             val pythonDir = File(packagesDir, pythonDirName)
             val ffmpegDir = File(packagesDir, ffmpegDirName)
             ffmpegLibDir = File(ffmpegDir, "usr/lib")
-            val aria2cDir = File(packagesDir, aria2cDirName)
             val ytdlpDir = File(baseDir, ytdlpDirName)
             ytdlpPath = File(ytdlpDir, ytdlpBin)
             ENV_LD_LIBRARY_PATH = pythonDir.absolutePath + "/usr/lib" + ":" +
                 ffmpegDir.absolutePath + "/usr/lib" + ":" +
-                aria2cDir.absolutePath + "/usr/lib" + ":" +
                 binDir!!.absolutePath
             ENV_SSL_CERT_FILE = pythonDir.absolutePath + "/usr/lib/python3.14/site-packages/certifi/cacert.pem"
             ENV_PYTHONHOME = pythonDir.absolutePath + "/usr"
-            ENV_ARIA2_OPENSSL_CONF = File(aria2cDir, "usr/etc/tls/openssl.cnf").absolutePath
-            ENV_ARIA2_OPENSSL_MODULES = File(aria2cDir, "usr/lib/ossl-modules").absolutePath
             TMPDIR = appContext.cacheDir.absolutePath
             initFFmpeg(appContext, ffmpegDir)
             initPython(appContext, pythonDir)
-            initAria2Next(appContext, aria2cDir)
+            initAria2Next()
+            FileUtils.deleteQuietly(File(packagesDir, "aria2c"))
             initYtdlp(appContext, ytdlpDir)
             initialized = true
         }
@@ -165,24 +160,8 @@ object YoutubeDL {
         update(appContext, pythonLibVersion, version)
     }
 
-    fun initAria2Next(appContext: Context, aria2cDir: File) {
-        val aria2cLib = File(binDir, aria2cLibName)
-        val aria2cSize = aria2cLib.length().toString()
-
-        if (!aria2cDir.exists() || shouldUpdateAria2c(appContext, aria2cSize)) {
-            FileUtils.deleteQuietly(aria2cDir)
-            aria2cDir.mkdirs()
-            try {
-                unzip(aria2cLib, aria2cDir)
-            } catch (e: Exception) {
-                FileUtils.deleteQuietly(aria2cDir)
-                throw YoutubeDLException("failed to initialize aria2c", e)
-            }
-            updateAria2c(appContext, aria2cSize)
-        }
-
-        aria2cPath = File(binDir, aria2cBinName)
-        val aria2cBinary = aria2cPath!!
+    fun initAria2Next() {
+        val aria2cBinary = File(binDir, aria2cBinName)
 
         if (!aria2cBinary.exists()) {
             throw YoutubeDLException(
@@ -195,13 +174,7 @@ object YoutubeDL {
                 "aria2c native executable is not executable at ${aria2cBinary.absolutePath}"
             )
         }
-    }
-
-    private fun shouldUpdateAria2c(appContext: Context, version: String): Boolean =
-        version != SharedPrefsHelper[appContext, aria2cLibVersion]
-
-    private fun updateAria2c(appContext: Context, version: String) {
-        update(appContext, aria2cLibVersion, version)
+        aria2cPath = aria2cBinary
     }
 
     private fun assertInit() {
@@ -239,6 +212,16 @@ object YoutubeDL {
     } // since you already need initializeLib anyway to... initializeLib, this should work
 
     // These were add for use of ffmpeg outside yt-dlp, really handy if you think about it
+
+    /**
+     * This only exists to be passed as an arg (`--ca-certificate`) to **aria2** for
+     * **yt-dlp** to verify HTTPS certificates. This function is just a string!
+     * Requires [initializeLib] to have completed first.
+     */
+    fun getCaCertPath(): String {
+        assertInit()
+        return requireNotNull(ENV_SSL_CERT_FILE) { "CA cert path not initialized" }
+    }
 
     private fun ignoreErrors(request: YoutubeDLRequest, out: String): Boolean =
         request.hasOption("--dump-json") && out.isNotEmpty() && request.hasOption("--ignore-errors")
@@ -375,15 +358,6 @@ object YoutubeDL {
         val quickJsCli = File(requireNotNull(binDir), "libqjs-cli.so")
         if (quickJsCli.exists()) request.addOption("--js-runtimes", "quickjs:${quickJsCli.absolutePath}")
 
-        // this sets aria2 Next as on by default
-        if (request.buildCommand().contains("libaria2c.so")) {
-            request
-                .addOption("--external-downloader-args", "aria2c:--summary-interval=1")
-                .addOption(
-                    "--external-downloader-args",
-                    "aria2c:--ca-certificate=$ENV_SSL_CERT_FILE"
-                )
-        }
         request.addOption("--ffmpeg-location", ffmpegPath!!.absolutePath)
         val process: Process
         val exitCode: Int
@@ -436,12 +410,8 @@ object YoutubeDL {
         processBuilder.environment().apply {
             this["LD_LIBRARY_PATH"] = ENV_LD_LIBRARY_PATH
             this["SSL_CERT_FILE"] = ENV_SSL_CERT_FILE
-            this["PATH"] =
-                System.getenv("PATH").orEmpty() + ":" + binDir!!.absolutePath + ":" +
-                aria2cPath!!.parentFile!!.absolutePath
+            this["PATH"] = System.getenv("PATH").orEmpty() + ":" + binDir!!.absolutePath
             this["PYTHONHOME"] = ENV_PYTHONHOME
-            this["OPENSSL_CONF"] = ENV_ARIA2_OPENSSL_CONF
-            this["OPENSSL_MODULES"] = ENV_ARIA2_OPENSSL_MODULES
             this["HOME"] = ENV_PYTHONHOME
             this["TMPDIR"] = TMPDIR
         }
@@ -562,10 +532,7 @@ object YoutubeDL {
     private const val ffprobeBinName = "libffprobe.so"
     private const val ffmpegLibName = "libffmpeg.zip.so"
     private const val ffmpegLibVersion = "ffmpegLibVersion"
-    private const val aria2cDirName = "aria2c"
     private const val aria2cBinName = "libaria2c.so"
-    private const val aria2cLibName = "libaria2.zip.so"
-    private const val aria2cLibVersion = "aria2cLibVersion"
     const val ytdlpDirName = "yt-dlp"
     const val ytdlpBin = "yt-dlp"
     private const val ytdlpLibVersion = "ytdlpLibVersion"

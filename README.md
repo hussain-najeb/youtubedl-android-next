@@ -240,7 +240,7 @@ Also, you can easily swap containers (e.g., moving video into a `WebM` or `Ogg` 
 
 - You can use Aria2 Next as a different option from the default downloader with:
 ```kotlin
-val aria2Argument = "aria2c:--summary-interval=1 -x 12 -s 12 -k 1M"
+val aria2Argument = "aria2c:--summary-interval=1 -x 12 -s 12 -k 1M --ca-certificate=${YoutubeDL.getCaCertPath()}"
 request.addOption("--downloader", "libaria2c.so")
 request.addOption("--external-downloader-args", aria2Argument)
 ```

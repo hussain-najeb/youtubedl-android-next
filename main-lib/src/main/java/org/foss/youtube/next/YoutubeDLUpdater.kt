@@ -1,6 +1,5 @@
 package org.foss.youtube.next
 
-import android.annotation.SuppressLint
 import android.content.Context
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode

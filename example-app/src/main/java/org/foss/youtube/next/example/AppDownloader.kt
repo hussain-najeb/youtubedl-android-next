@@ -40,6 +40,9 @@ suspend fun Download(
 
     video?.let { request.addOption("-f", it.videoQuality) }
 
+    // well, just uncomment this to get the aria2 output instead of the native one
+    // aria2Test(request)
+
     request.addOption("-v")
     request.addOption("-i")
     request.addOption("--embed-metadata")
@@ -52,6 +55,11 @@ suspend fun Download(
     }
 }
 
+private fun aria2Test(request: YoutubeDLRequest) {
+    val aria2Argument = "aria2c:--summary-interval=1 -x 12 -s 12 -k 1M --ca-certificate=${YoutubeDL.getCaCertPath()}"
+    request.addOption("--downloader", "libaria2c.so")
+    request.addOption("--external-downloader-args", aria2Argument)
+}
 
 class DownWorker(context: Context, param: WorkerParameters) : CoroutineWorker(context, param) {
     override suspend fun doWork(): Result {

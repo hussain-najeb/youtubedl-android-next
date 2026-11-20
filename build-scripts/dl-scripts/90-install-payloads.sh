@@ -120,7 +120,7 @@ clean_stale_for_abi() {
   for name in \
     libavcodec.so libavdevice.so libavfilter.so libavformat.so libavutil.so \
     libswresample.so libswscale.so libc++_shared.so \
-    libaria2.so libaria2c.zip.so libffmpeg.zip.so.bak; do
+    libaria2.so libaria2.zip.so libaria2c.zip.so libffmpeg.zip.so.bak; do
     remove_if_present "$dest/$name"
   done
 }
@@ -193,11 +193,6 @@ install_aria2() {
 
   require_file "$bundle" "aria2 runtime bundle for $abi"
 
-  
-  cp "$bundle" "$dest/libaria2.zip.so"
-
-  
-  
   unzip -p "$bundle" usr/bin/aria2c.real > "$dest/libaria2c.so"
   chmod 0755 "$dest/libaria2c.so"
   patchelf --remove-rpath "$dest/libaria2c.so"
@@ -247,7 +242,7 @@ for abi in $ALL_ABIS; do
   for name in \
     libpython.so libpython.zip.so libqjs.so libqjs-cli.so \
     libffmpeg.so libffprobe.so libffmpeg.zip.so \
-    libaria2c.so libaria2.zip.so; do
+    libaria2c.so; do
     require_file "$dest/$name" "pre-Gradle jniLibs check for $abi ($name)"
   done
 done
@@ -267,7 +262,7 @@ for abi in $ALL_ABIS; do
   for name in \
     libpython.so libpython.zip.so libqjs.so libqjs-cli.so \
     libffmpeg.so libffprobe.so libffmpeg.zip.so \
-    libaria2c.so libaria2.zip.so; do
+    libaria2c.so; do
     unzip -Z1 "$AAR" | grep -x "jni/$abi/$name" >/dev/null \
       || die "missing jni/$abi/$name from $mod AAR"
   done

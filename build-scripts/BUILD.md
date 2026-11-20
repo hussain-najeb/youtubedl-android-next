@@ -258,7 +258,6 @@ The purpose of this entire system is to produce these runtime components:
 | `libffprobe.so`    | **ffprobe** executable                          |
 | `libffmpeg.zip.so` | **ffmpeg** dependency libraries and C++ runtime |
 | `libaria2c.so`     | **aria2** executable                            |
-| `libaria2.zip.so`  | **aria2** runtime libraries and certificates    |
 
 These are packaged into the release AAR under `jni/<ABI>/`.
 

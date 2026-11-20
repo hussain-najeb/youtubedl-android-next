@@ -164,6 +164,24 @@ package_python_for_abi() {
   relocate_termux_elf_runpaths "$stage"
   verify_no_termux_elf_runpaths "$stage"
 
+  local strip_bin="$TERMUX_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+  if [ -x "$strip_bin" ]; then
+    local site_dir="$stage/usr/lib/python${MAJ_MIN}/site-packages"
+    if [ -f "$site_dir/curl_cffi/_wrapper.abi3.so" ]; then
+      "$strip_bin" --strip-unneeded "$site_dir/curl_cffi/_wrapper.abi3.so"
+    fi
+    find "$site_dir/curl_cffi.libs" -maxdepth 1 -type f -name 'libc++_shared*.so' \
+      -exec "$strip_bin" --strip-unneeded {} + 2>/dev/null || true
+  fi
+
+  local py_lib_dir="$stage/usr/lib/python${MAJ_MIN}"
+  rm -rf \
+    "$py_lib_dir/unittest" \
+    "$py_lib_dir/pydoc_data" \
+    "$py_lib_dir/_pyrepl"
+  find "$py_lib_dir/lib-dynload" -maxdepth 1 -type f -name '_test*.so' -delete 2>/dev/null || true
+  find "$py_lib_dir" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+
   local py_out_dir="$OUT_DIR/python/$abi"
   local zip_out="$py_out_dir/libpython-${FULL_VER}-${abi}.zip.so"
   local launcher_out="$py_out_dir/libpython-${FULL_VER}-${abi}.so"
