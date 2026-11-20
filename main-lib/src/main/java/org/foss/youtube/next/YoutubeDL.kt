@@ -272,8 +272,8 @@ object YoutubeDL {
     }
 
     /**
-     For apps that use this library, this function is to be called to cancel the process.
-     Usually you would have an ID that reefers to the WorkManager ID that you would have.
+     For apps that use this library, this function is to be called when cancelling the process.
+     Usually you would have an ID that reefers to the `WorkManager` ID that you would have.
 
      Check the example app code of the library for the optimal integration.
      */
@@ -293,7 +293,7 @@ object YoutubeDL {
 
     /**
      Shell command function with the only purpose of finding and terminating
-     A yt-dlp process
+     the yt-dlp process
      */
     private fun destroyChildProcesses(pid: Int): Boolean = try {
         val executionCommand = """
