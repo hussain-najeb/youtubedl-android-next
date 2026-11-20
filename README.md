@@ -5,11 +5,12 @@
 > 2. **Updated** the library to have the UI Framework **Compose**, while removing the old xml/views system for the example app; this only affects the example app.
 > 3. Modernizing the library to use modern **Kotlin** features, like coroutines and mutexes, while generally making the codebase more **Kotlin**-idiomatic, and making the codebase leaner.
 > 4. Updated library **ffmpeg** from **7.0.2** to **9.0.2** and included a much wider support for audio and video encoding/decoding and the enablement of the hardware acceleration option by default.
-> 5. Migrated the old library [**QuickJs**](https://bellard.org/quickjs/) to the new project [**QuickJS-NG**](https://github.com/quickjs-ng/quickjs) which is a maintained fork of the original with many enhancements.
-> 6. Migrated the old library [**Aria2c**](https://github.com/aria2/aria2) to its actively maintained, modern reimplementation, [**Aria2-Next**](https://github.com/AnInsomniacy/aria2-next)!
-> 7. Added library [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), which is a Python binding for Curl-Impersonate that enables Python applications to perform HTTP requests; basically, a convenient **interface** for Curl-Impersonate.
-> 8. Added [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), a modified build of curl that can mimic the TLS and HTTP fingerprints of major browsers, like Chrome, allowing automated HTTP requests to closely resemble browser traffic.
-> 9. Much more on the way!
+> 5. Additional functions added for the **ffmpeg** integration for use outside of **yt-dlp** with compressed and striped **.so** files for the smallest size possible.
+> 6. Migrated the old library [**QuickJs**](https://bellard.org/quickjs/) to the new project [**QuickJS-NG**](https://github.com/quickjs-ng/quickjs) which is a maintained fork of the original with many enhancements.
+> 7. Migrated the old library [**Aria2c**](https://github.com/aria2/aria2) to its actively maintained, modern reimplementation, [**Aria2-Next**](https://github.com/AnInsomniacy/aria2-next)!
+> 8. Added library [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), which is a Python binding for Curl-Impersonate that enables Python applications to perform HTTP requests; basically, a convenient **interface** for Curl-Impersonate.
+> 9. Added [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), a modified build of curl that can mimic the TLS and HTTP fingerprints of major browsers, like Chrome, allowing automated HTTP requests to closely resemble browser traffic.
+> 10. Much more on the way!
 
 > [!IMPORTANT]
 > An elaboration on the first 3 points.
@@ -219,8 +220,18 @@ This "id" param comes from the `WorkManager` UUID, it is highly advised to inspe
 | libwavpack  | `--enable-libwavpack`  | `-wavpack`          |
 | libwebp     | `--enable-libwebp`     | `-webp`             |
 | libx264     | `--enable-libx264`     | `-x264`             |
+##### In addition to all types of MediaCodecs!
 
 All these libraries are included with the shipped **ffmpeg** and **ffprobe**, which can be used by **yt-dlp** for more options, such as switching to other audio formats like `opus` or `mp3` and other video containers like `WebM` or `MKV`. It allows you to embed thumbnails, subtitles, and detailed metadata directly into the final file.
+
+And yes, you can use **ffmpeg** separately now instead of shipping your own!
+it can be done by using the following functions:
+1. `getFFmpegBinary` to use the **.so** file for **ffmpeg**.
+2. `getFFprobeBinary` to use the **.so** file for **ffprobe**.
+3. `getFFLibPath` to use the `LD_LIBRARY_PATH` value.
+
+> [!NOTE]
+> You **MUST** initialize `initializeLib` first to use them
 
 Also, you can easily swap containers (e.g., moving video into a `WebM` or `Ogg` container) without re-encoding, preserving the original quality while changing the file extension.
 
