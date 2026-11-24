@@ -1,0 +1,12 @@
+diff --git a/scripts/build/setup/termux_setup_build_python.sh b/scripts/build/setup/termux_setup_build_python.sh
+index ab590c3f..35efa600 100644
+--- a/scripts/build/setup/termux_setup_build_python.sh
++++ b/scripts/build/setup/termux_setup_build_python.sh
+@@ -87,6 +87,7 @@ termux_setup_build_python() {
+ 					--enable-shared \
+ 					--prefix="$_PYTHON_FOLDER/host-build-prefix"
+ 			env -i \
++				PATH="/usr/bin" \
+ 				make -j "$(nproc)" install
+ 			)
+ 

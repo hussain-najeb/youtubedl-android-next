@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
+source "$SCRIPT_DIR/common.sh"
+
+echo_config_once
+
+if [ ! -d "$FFMPEG_MAKER_DIR/.git" ]; then
+  log "Cloning ffmpeg-android-maker at pinned commit $FFMPEG_MAKER_COMMIT into $FFMPEG_MAKER_DIR"
+  rm -rf "$FFMPEG_MAKER_DIR"
+  git clone --no-checkout --depth 1 https://github.com/Javernaut/ffmpeg-android-maker.git "$FFMPEG_MAKER_DIR"
+fi
+git -C "$FFMPEG_MAKER_DIR" fetch --depth 1 origin "$FFMPEG_MAKER_COMMIT"
+git -C "$FFMPEG_MAKER_DIR" checkout --force --detach "$FFMPEG_MAKER_COMMIT"
+git -C "$FFMPEG_MAKER_DIR" reset --hard "$FFMPEG_MAKER_COMMIT"
+[ "$(git -C "$FFMPEG_MAKER_DIR" rev-parse HEAD)" = "$FFMPEG_MAKER_COMMIT" ] \
+  || die "ffmpeg-android-maker checkout does not match pinned commit $FFMPEG_MAKER_COMMIT"
+
+# ffmpeg-android-maker is a plain build script with no hooks for our needs, so after the
+# pinned checkout (which resets it to a clean copy every run) we patch its scripts in place.
+# Three patches follow: the mbedTLS build step, FFmpeg's configure call, and the TLS detection.
+ffmpeg_build_sh="$FFMPEG_MAKER_DIR/scripts/ffmpeg/build.sh"
+require_file "$ffmpeg_build_sh" "ffmpeg-android-maker FFmpeg build script"
+
+mbedtls_download_sh="$FFMPEG_MAKER_DIR/scripts/mbedtls/download.sh"
+mbedtls_build_sh="$FFMPEG_MAKER_DIR/scripts/mbedtls/build.sh"
+# Bump FreeType version to fix 404 download errors
+
+sed -i "s/2.14.3/2.15.0/g" "$FFMPEG_MAKER_DIR/scripts/libfreetype/download.sh"
+
+sed -i "s/2.14.3/2.15.0/g" "$FFMPEG_MAKER_DIR/scripts/libfreetype/build.sh"
+
+libvpx_build_sh="$FFMPEG_MAKER_DIR/scripts/libvpx/build.sh"
+require_file "$libvpx_build_sh" "ffmpeg-android-maker libvpx build script"
+sed -i "s/--disable-runtime-cpu-detect/--enable-runtime-cpu-detect/g" "$libvpx_build_sh"
+
+require_file "$mbedtls_download_sh" "ffmpeg-android-maker mbedTLS download script"
+require_file "$mbedtls_build_sh" "ffmpeg-android-maker mbedTLS build script"
+
+# replace the thing with the thing, i forgot what this does, maybe relace the mbedtls with a different version?
+cat << 'MBED_EOF' > "$mbedtls_build_sh"
+#!/usr/bin/env bash
+CMAKE_BUILD_DIR=mbedtls_build_${ANDROID_ABI}
+cd mbedtls-${MBEDTLS_VERSION}
+
+sed -i 's/-Werror//g' CMakeLists.txt
+
+rm -rf ${CMAKE_BUILD_DIR}
+mkdir ${CMAKE_BUILD_DIR}
+cd ${CMAKE_BUILD_DIR}
+${CMAKE_EXECUTABLE} .. \
+ -DANDROID_PLATFORM=${ANDROID_PLATFORM} \
+ -DANDROID_ABI=${ANDROID_ABI} \
+ -DCMAKE_TOOLCHAIN_FILE=${SCRIPTS_DIR}/mbedtls/android.cmake \
+ -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+ -DENABLE_TESTING=0 \
+ -DENABLE_PROGRAMS=0 \
+ -DCMAKE_C_FLAGS="-Wno-error=unterminated-string-initialization"
+${MAKE_EXECUTABLE} -j${HOST_NPROC}
+${MAKE_EXECUTABLE} install
+export FFMPEG_EXTRA_LD_FLAGS="${FFMPEG_EXTRA_LD_FLAGS} -lmbedtls -lmbedx509 -lmbedcrypto"
+export EXTRA_BUILD_CONFIGURATION_FLAGS="${EXTRA_BUILD_CONFIGURATION_FLAGS} --enable-protocol=https --enable-version3"
+MBED_EOF
+chmod +x "$mbedtls_build_sh"
+
+python3 - "$ffmpeg_build_sh" <<'PY_PATCH_FFMPEG'
+from pathlib import Path
+import re
+import sys
+
+p = Path(sys.argv[1])
+s = p.read_text()
+
+# Patch 2a: replace -O3 with -Os and pass $FERMUX_CFLAGS through to FFmpeg's --extra-cflags
+# (libmp3lame/build.sh resets $CFLAGS in the same shell, so $FERMUX_CFLAGS preserves our flags).
+
+if '${FERMUX_CFLAGS:-}' not in s:
+    s, n = re.subn(
+        r'(--extra-cflags=")-O3 ([^"]*)(")',
+        r'\1-Os \2 ${FERMUX_CFLAGS:-}\3',
+        s,
+        count=1,
+    )
+    if n != 1:
+        raise SystemExit("Could not patch FFmpeg --extra-cflags")
+
+# Patch 2a-ld: add --gc-sections, --icf=safe, and --pack-dyn-relocs=android to EXTRA_LDFLAGS.
+if '--pack-dyn-relocs=android' not in s:
+    s, n = re.subn(
+        r'(EXTRA_LDFLAGS="-Wl,-z,max-page-size=16384 )',
+        r'\1-Wl,--gc-sections,--icf=safe,--pack-dyn-relocs=android ',
+        s,
+        count=1,
+    )
+    if n != 1:
+        raise SystemExit("Could not patch FFmpeg EXTRA_LDFLAGS")
+
+# Patch 2b: same for C++ flags ($CXXFLAGS -> --extra-cxxflags).
+if '--extra-cxxflags=' not in s:
+    lines = s.splitlines(keepends=True)
+
+    for i, line in enumerate(lines):
+        if '--extra-cflags=' in line:
+            indent = line[:len(line) - len(line.lstrip())]
+            lines.insert(
+                i + 1,
+                indent + '--extra-cxxflags="${CXXFLAGS:-}" \\\n'
+            )
+            break
+    else:
+        raise SystemExit("Could not locate FFmpeg --extra-cflags line")
+
+    s = ''.join(lines)
+
+# Disabled (if False): would add an $ORIGIN rpath at link time. The rpath is set with patchelf
+# after the build instead (see verify_ffmpeg_for_abi).
+if False and '--extra-ldexeflags=' not in s:
+    lines = s.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if '--extra-cxxflags=' in line or '--extra-cflags=' in line:
+            indent = line[:len(line) - len(line.lstrip())]
+
+            j = i + 1
+            while j < len(lines) and ('--extra-cxxflags=' in lines[j] or '--extra-cflags=' in lines[j]):
+                j += 1
+            lines.insert(j, indent + '--extra-ldexeflags="-Wl,-rpath,\\$ORIGIN" \\\n')
+            break
+    else:
+        raise SystemExit("Could not locate FFmpeg linker flag insertion point")
+    s = ''.join(lines)
+
+# Patch 2c: after configure, overwrite FFMPEG_CONFIGURATION in config.h with a fixed string so the
+# binary does not embed the full configure command line (and build paths). Runs once (marker check).
+if 'Fermux: sanitize FFmpeg build metadata' not in s:
+    needle = '$ADDITIONAL_COMPONENTS || exit 1\n'
+
+    if needle not in s:
+        raise SystemExit(
+            "Could not locate end of FFmpeg configure command"
+        )
+
+    sanitizer = (
+        '\n'
+        '# Fermux: sanitize FFmpeg build metadata\n'
+        'if [ -f config.h ]; then\n'
+        '  sed -i \'s|^#define FFMPEG_CONFIGURATION .*|'
+        '#define FFMPEG_CONFIGURATION "Android build"|\' config.h\n'
+        'fi\n'
+    )
+
+    s = s.replace(needle, needle + sanitizer, 1)
+
+# Patch 2d: enable Android MediaCodec hardware encoders/decoders directly in configure.
+# Exporting EXTRA_BUILD_CONFIGURATION_FLAGS before calling ffmpeg-android-maker.sh gets wiped by
+# scripts/export-build-variables.sh on every ABI iteration, so we inject the flags here instead.
+if '--enable-mediacodec' not in s:
+    target = '  --disable-vulkan \\\n'
+    if target not in s:
+        raise SystemExit("Could not locate --disable-vulkan line in FFmpeg configure command")
+    s = s.replace(
+        target,
+        target + '  --enable-jni \\\n  --enable-mediacodec \\\n  --enable-small \\\n',
+        1,
+    )
+
+# Patch 3: make FFmpeg's configure find mbedTLS without pkg-config by replacing
+# require_pkg_config with a direct require that links -lmbedtls -lmbedx509 -lmbedcrypto.
+# NOTE: this one fails silently - if configure's text changes, the sed just does nothing.
+if 'require_pkg_config mbedtls' not in s:
+    s = s.replace('./configure \\', "sed -i 's|require_pkg_config mbedtls mbedtls mbedtls/ssl.h mbedtls_ssl_init|require mbedtls mbedtls/ssl.h mbedtls_ssl_init -lmbedtls -lmbedx509 -lmbedcrypto|g' configure\n\n./configure \\")
+
+p.write_text(s)
+PY_PATCH_FFMPEG
+
+MAKER_ABIS="${ABIS// /,}"
+
+(
+  cd "$FFMPEG_MAKER_DIR"
+
+  export PATH="$HOME/.local/bin:$PATH"
+  export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+  # Strip the build machine's home path from compiled output (reproducibility / no path leaks), "fermux" here is just the name of the app that uses this lib, nothing confusing.
+
+  export FERMUX_CFLAGS="${CFLAGS:-} -ffunction-sections -fdata-sections -ffile-prefix-map=$HOME=/usr/src/fermux -fdebug-prefix-map=$HOME=/usr/src/fermux -fmacro-prefix-map=$HOME=/usr/src/fermux"
+  export CFLAGS="$FERMUX_CFLAGS"
+  export CXXFLAGS="${CXXFLAGS:-} -ffunction-sections -fdata-sections -ffile-prefix-map=$HOME=/usr/src/fermux -fdebug-prefix-map=$HOME=/usr/src/fermux -fmacro-prefix-map=$HOME=/usr/src/fermux"
+
+  log "Building FFmpeg $FFMPEG_VERSION for ABIs: $MAKER_ABIS (whitelisted libs + MediaCodec)"
+
+  maker_args=(
+    "--source-tar=$FFMPEG_VERSION"
+    --enable-libdav1d
+    --enable-libmp3lame
+    --enable-libopus
+    --enable-libvpx
+    --enable-libwebp
+    --enable-libx264
+    --enable-libx265
+    --enable-libxml2
+    --enable-mbedtls
+    "--android-api-level=$API_LEVEL"
+    "-abis=$MAKER_ABIS"
+  )
+
+  ANDROID_NDK_HOME="$TERMUX_NDK_ROOT" \
+    ./ffmpeg-android-maker.sh "${maker_args[@]}"
+)
+
+verify_ffmpeg_for_abi() {
+  local abi="$1"
+  local bin_dir="$FFMPEG_MAKER_DIR/build/ffmpeg/$abi/bin"
+  local ffmpeg_bin="$bin_dir/ffmpeg"
+  local ffprobe_bin="$bin_dir/ffprobe"
+  require_file "$ffmpeg_bin" "ffmpeg binary for $abi"
+  require_file "$ffprobe_bin" "ffprobe binary for $abi"
+
+  patchelf --set-rpath '$ORIGIN' "$ffmpeg_bin"
+  patchelf --set-rpath '$ORIGIN' "$ffprobe_bin"
+  file "$ffmpeg_bin"
+  file "$ffprobe_bin"
+
+  rm -rf "$OUT_DIR/ffmpeg/$abi"
+  mkdir -p "$OUT_DIR/ffmpeg/$abi"
+  cp "$ffmpeg_bin" "$OUT_DIR/ffmpeg/$abi/libffmpeg.so"
+  cp "$ffprobe_bin" "$OUT_DIR/ffmpeg/$abi/libffprobe.so"
+  find "$FFMPEG_MAKER_DIR/build/ffmpeg/$abi/lib" -maxdepth 1 \( -type f -o -type l \) -name '*.so*' \
+    ! -name '*.zip.so' \
+    -exec cp -a {} "$OUT_DIR/ffmpeg/$abi/" \; 2>/dev/null || true
+
+  local staged="$OUT_DIR/ffmpeg/$abi"
+  for exe in "$staged/libffmpeg.so" "$staged/libffprobe.so"; do
+    # shellcheck disable=SC2016
+    readelf -d "$exe" | grep -E 'RUNPATH|RPATH' | grep -F '$ORIGIN' >/dev/null \
+      || die "$(basename "$exe") for $abi has no \$ORIGIN RUNPATH"
+  done
+
+  for dep in libavdevice.so libavfilter.so libavformat.so libavcodec.so libswresample.so libswscale.so libavutil.so; do
+    require_file "$staged/$dep" "$dep staged beside FFmpeg for $abi"
+  done
+
+  readelf -d "$staged/libavcodec.so" | grep -F 'libmediandk.so' >/dev/null \
+    || die "libavcodec.so for $abi is missing libmediandk.so (MediaCodec hardware encoding was not enabled)" # shame, it would take a lot of time to rebuild
+
+  log "FFmpeg/ffprobe staged for $abi with self-contained \$ORIGIN runtime lookup"
+}
+
+for_each_abi verify_ffmpeg_for_abi
+
+log "Reminder (doc section 99): a correct Android ELF does not imply HTTPS/TLS"
+log "support. After packaging, run: adb shell '<libffmpeg.so path> -protocols' and"
+log "confirm https/tls are listed before trusting this build for network use."
