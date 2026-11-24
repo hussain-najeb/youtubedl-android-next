@@ -7,7 +7,7 @@ This document will teach you what the *build.tar.gz* does and how to build all t
 
 ## What you need
 
-You need a bunch of software to execute these commands, like having **Java** installed and setting it in your "**.bashrc**" file, I strongly suggest using **Java** 21 from **Termux**!
+You need a bunch of software to execute these commands, like having **Java** installed and setting it in your "**.bashrc**" file, I strongly suggest using **Java** 21 from **Temurin**!
 
 Also you need docker installed, as its crucial to use, fetch, cross-compile, and do the magic that is needed for the scripts to work, something like:
 
@@ -17,7 +17,7 @@ sudo apt install -y docker.io
 
 For **Ubuntu** systems, I assume you can replace "apt" with "dnf" for example.
 
-Also the scripts do need a bunch of software that assumes you installed, but just to be safe, here is all the software you need:
+Also the scripts do need a bunch of software that assumes you installed, but just to be *really* sure, here is all the software you need:
 
 ```
 sudo apt update
@@ -52,7 +52,7 @@ sudo apt install -y \
     perl
 ```
 
-Then you can just copy and paste these commands, run them, and then run the "**./build-all**" script and face no issues (hopefully).
+Then you can just copy and paste these commands, run them, and then run the "**./build-all**" script and face no issues (hopefully). These were installed and built on **Fedora 45** and **Ubuntu 24**, switch from **apt** do **dnf** should be seamless.
 
 ## Components
 

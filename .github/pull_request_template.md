@@ -9,7 +9,6 @@
 - [ ] Documentation
 
 ## Checklist
-- [ ] This PR is tested this on a device/emulator and a download test that succeeded has been run.
+- [ ] I tested this PR on a device/emulator and ran a successful download test (if applicable).
 - [ ] This PR is in compliance with the [library's AI Policy](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/AI_POLICY.md)
 - [ ] This PR requires another PR in order to merge
-    
