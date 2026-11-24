@@ -11,7 +11,6 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import org.foss.youtube.common.prefs.SharedPrefsHelper
 import org.foss.youtube.common.prefs.SharedPrefsHelper.update
-import org.foss.youtube.next.YoutubeDL.getInstance
 
 internal object YoutubeDLUpdater {
     private const val dlpBinaryName = "yt-dlp"
@@ -39,7 +38,7 @@ internal object YoutubeDLUpdater {
         } catch (e: Exception) {
             /* if something went wrong restore default version */
             FileUtils.deleteQuietly(ytdlpDir)
-            getInstance().initYtdlp(appContext, ytdlpDir)
+            YoutubeDL.initYtdlp(appContext, ytdlpDir)
             throw YoutubeDLException(e)
         } finally {
             file.delete()

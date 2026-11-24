@@ -16,5 +16,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "youtubedl-android-next"
 include(":example-app", ":main-lib", ":natives", ":natives-x86_64")
-
-// TODO. edit some code, the do maven and test on the VM

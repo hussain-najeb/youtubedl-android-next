@@ -21,6 +21,7 @@ import org.foss.youtube.common.prefs.Unpack.untarXz
 import org.foss.youtube.next.mapper.VideoInfo
 
 object YoutubeDL {
+    @Volatile
     private var initialized = false
     private var pythonPath: File? = null
     private var ffmpegPath: File? = null
@@ -103,7 +104,7 @@ object YoutubeDL {
         update(appContext, ffmpegLibVersion, version)
     }
 
-    fun initYtdlp(appContext: Context, ytdlpDir: File) {
+    internal fun initYtdlp(appContext: Context, ytdlpDir: File) {
         if (!ytdlpDir.exists()) ytdlpDir.mkdirs()
         val ytdlpBinary = File(ytdlpDir, ytdlpBin)
         val ytdlpVersion = appContext.resources.openRawResourceFd(R.raw.ytdlp).use { it.length.toString() }
@@ -129,7 +130,7 @@ object YoutubeDL {
         update(appContext, ytdlpLibVersion, version)
     }
 
-    fun initPython(appContext: Context, pythonDir: File) {
+    private fun initPython(appContext: Context, pythonDir: File) {
         val pythonLib = File(binDir, pythonLibName)
         // using size of lib as version
         val pythonSize = pythonLib.length().toString()
@@ -156,7 +157,7 @@ object YoutubeDL {
         update(appContext, pythonLibVersion, version)
     }
 
-    fun initAria2Next() {
+    private fun initAria2Next() {
         val aria2cBinary = File(binDir, aria2cBinName)
 
         if (!aria2cBinary.exists()) {
@@ -352,7 +353,6 @@ object YoutubeDL {
 
         // request.addOption("--impersonate", "chrome")
 
-
         // To use QuickJS-NG as the JS solver
         val quickJsCli = File(requireNotNull(binDir), "libqjs-cli.so")
         if (quickJsCli.exists()) request.addOption("--js-runtimes", "quickjs:${quickJsCli.absolutePath}")
@@ -538,5 +538,6 @@ object YoutubeDL {
     private const val pythonLibVersion = "pythonLibVersion"
     val objectMapper = ObjectMapper()
 
+    @Deprecated("Call methods on YoutubeDL directly", ReplaceWith("YoutubeDL"))
     fun getInstance() = this
 }

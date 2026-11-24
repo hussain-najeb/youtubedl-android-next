@@ -49,7 +49,7 @@ suspend fun Download(
     request.addOption("-o", finalDir)
 
     // Make "redirectErrorStream = true" false to have normal progress and thumbnail, only turn it to true for debugging.
-    YoutubeDL.getInstance().execute(request, id, redirectErrorStream = true) { progress, _, log ->
+    YoutubeDL.execute(request, id, redirectErrorStream = true) { progress, _, log ->
         Log.d("YoutubeDL", log)
         callback(progress, log)
     }

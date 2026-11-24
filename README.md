@@ -140,12 +140,12 @@ request.addOption("-i") // to ignore errors when they happen
 
 - Then you get to use the **YoutubeDL** object:
 ```kotlin
-YoutubeDL.getInstance().execute(request, id, redirectErrorStream = false) { progress, _, string ->
+YoutubeDL.execute(request, id, redirectErrorStream = false) { progress, _, string ->
     callback(progress, string)
 }
 ```
 
-This snippet means that you call the object, get an instance, then call the execution function `execute`. You add in your `request` as we established, then your own `id` for the video, usually provided from `WorkManager`, then turn off `redirectErrorStream` (this param is for testing, so always turn it off), then use the `callback` param to supply your **download progress** and **logs**.
+This snippet means that you call the execution function `execute` directly on the **YoutubeDL** object. You add in your `request` as we established, then your own `id` for the video, usually provided from `WorkManager`, then turn off `redirectErrorStream` (this param is for testing, so always turn it off), then use the `callback` param to supply your **download progress** and **logs**.
 
 - To reliably get **progress**, use something like this:
 ```kotlin
@@ -155,9 +155,9 @@ request.addOption("--progress")
 - The process of updating **yt-dlp** should be simple, you should use `updateYoutubeDL`:
 ```kotlin
 val updateChannel = when (channel) {
-    YtdlpChannel.Stable -> YoutubeDL.UpdateChannel.STABLE
-    YtdlpChannel.Nightly -> YoutubeDL.UpdateChannel.NIGHTLY
-    YtdlpChannel.Master -> YoutubeDL.UpdateChannel.MASTER
+    YtdlpChannel.Stable -> YoutubeDL.UpdateChannel.Stable
+    YtdlpChannel.Nightly -> YoutubeDL.UpdateChannel.Nightly
+    YtdlpChannel.Master -> YoutubeDL.UpdateChannel.Master
 }
 ```
 
@@ -165,7 +165,7 @@ The `channel` is just the enum `YtdlpChannel`, which has the 3 values that were 
 
 Then use what goes out by using the `updateYoutubeDL` function now:
 ```kotlin
-val result = YoutubeDL.getInstance().updateYoutubeDL(
+val result = YoutubeDL.updateYoutubeDL(
     appContext = getApplication(),
     updateChannel = updateChannel
 )
@@ -181,7 +181,7 @@ YoutubeDL.destroyProcessById(id)
 This "id" param comes from the `WorkManager` UUID, it is highly advised to inspect the [example app's](https://github.com/hussain-najeb/youtubedl-android-next/blob/master/example-app/src/main/java/org/foss/youtube/next/example/DownloadViewModel.kt) code for a better picture.
 
 > [!NOTE]
-> You dont need `getInstance()` to cancel requests.
+> `getInstance()` is deprecated. `YoutubeDL` is a Kotlin `object` (singleton), you can call all methods directly on `YoutubeDL` without `getInstance()`.
 
 
 > [!TIP]
@@ -264,7 +264,13 @@ In **youtubedl-android Next**, you don't have to use anything for **QuickJS-NG**
 
 ## Curl-Impersonate
 
-In **youtubedl-android Next**, you also don't have to do anything for TLS and impersonation to work, it works out-of-the-box with [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), an active fork that works with [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), all **cross-compiled** for **arm32, arm64, and x86_64**, which makes it much easier to download videos from YouTube, TikTok, Instagram, and many, many more websites that weren't possible to download without major errors. This, inadvertently, makes **yt-dlp** much more reliable when making requests!
+In **youtubedl-android Next**, you only need one line now to use **Curl-Impersonate**! Use:
+```kotlin
+request.addOption("--impersonate", "chrome") // or any browser you prefer, like firefox
+```
+It wasn't included by default to give people the option to turn it off.
+
+It ships [**Curl-Impersonate**](https://github.com/hussain-najeb/curl-impersonate), an active fork that works with [**Curl-Cffi**](https://github.com/lexiforest/curl_cffi), all **cross-compiled** for **arm32, arm64, and x86_64**, which makes it much easier to download videos from YouTube, TikTok, Instagram, and many, many more websites that weren't possible to download without major errors. This, inadvertently, makes **yt-dlp** much more reliable when making requests!
 
 And unlike other projects, **both libraries** that were added (Curl-Cffi, Curl-Impersonate) were **cross-compiled** to work for **arm32, arm64, and x86_64** (`arm64-v8a`, `armeabi-v7a`, and `x86_64`).
 
