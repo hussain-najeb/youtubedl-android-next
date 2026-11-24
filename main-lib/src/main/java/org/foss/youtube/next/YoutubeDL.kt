@@ -348,8 +348,11 @@ object YoutubeDL {
         if (!request.hasOption("--cache-dir") || request.getOption("--cache-dir") == null) {
             request.addOption("--no-cache-dir")
         }
-        // To use curl_cffi and curl_impersonate!
-        request.addOption("--impersonate", "chrome")
+        // To use curl_cffi and curl_impersonate you would have something like this:
+
+        // request.addOption("--impersonate", "chrome")
+
+
         // To use QuickJS-NG as the JS solver
         val quickJsCli = File(requireNotNull(binDir), "libqjs-cli.so")
         if (quickJsCli.exists()) request.addOption("--js-runtimes", "quickjs:${quickJsCli.absolutePath}")
